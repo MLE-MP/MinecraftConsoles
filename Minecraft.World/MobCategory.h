@@ -15,7 +15,7 @@ public:
 	static const int MAX_XBOX_MUSHROOMCOWS = 2;									// Max number of mushroom cows that the mob spawner will produce
 	static const int MAX_XBOX_SNOWMEN = 16;										// Max number of snow golems that can be created by placing blocks - 4J-PB increased limit due to player requests
 	static const int MAX_XBOX_IRONGOLEM = 16;									// Max number of iron golems that can be created by placing blocks - 4J-PB increased limit due to player requests
-	static const int CONSOLE_SQUID_HARD_LIMIT = 40;
+	static const int CONSOLE_SQUID_HARD_LIMIT = 20;
 	
 	static const int MAX_XBOX_ANIMALS_WITH_BREEDING = CONSOLE_ANIMALS_HARD_LIMIT + 20;	// Max number of animals that we can produce (in total), when breeding
 	static const int MAX_XBOX_CHICKENS_WITH_BREEDING = MAX_XBOX_CHICKENS + 8;	// Max number of chickens that we can produce (in total), when breeding/hatching
