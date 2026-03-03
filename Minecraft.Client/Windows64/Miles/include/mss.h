@@ -97,7 +97,7 @@ EXPGROUP(_RootGroup)
 // IS_SPU for PS3 SPU
 // IS_WII for Wii
 
-#include "rrCore.h"
+#include "rrcore.h"
 
 //#define MILES_CHECK_OFFSETS
 #ifdef MILES_CHECK_OFFSETS

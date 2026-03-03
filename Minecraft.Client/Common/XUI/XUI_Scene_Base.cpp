@@ -2,7 +2,7 @@
 
 #include <assert.h>
 #include "../../MultiplayerLevel.h"
-#include "../../MultiplayerLocalPlayer.h"
+#include "../../MultiPlayerLocalPlayer.h"
 #include "../../StatsCounter.h"
 #include "../../../Minecraft.World/StringHelpers.h"
 #include "../../../Minecraft.World/net.minecraft.stats.h"

@@ -18,10 +18,10 @@
 #include "EntityPos.h"
 #include "Entity.h"
 #include "SoundTypes.h"
-#include "../minecraft.Client/HumanoidModel.h"
+#include "../Minecraft.Client/HumanoidModel.h"
 #include "../Minecraft.Client/MinecraftServer.h"
 #include "../Minecraft.Client/MultiPlayerLevel.h"
-#include "../Minecraft.Client/MultiplayerLocalPlayer.h"
+#include "../Minecraft.Client/MultiPlayerLocalPlayer.h"
 #include "../Minecraft.Client/ServerLevel.h"
 #include "../Minecraft.Client/PlayerList.h"
 

@@ -28,9 +28,10 @@ if(UNIX)
   set(CMAKE_C_COMPILER clang-cl)
   set(CMAKE_CXX_COMPILER clang-cl)
   set(CMAKE_ASM_MASM_COMPILER llvm-ml)
+  set(CMAKE_LINKER lld-link)
 
-  add_compile_options(/winsysroot /opt/msvc --target=x86_64-pc-win32)
-  add_link_options(/winsysroot /opt/msvc --target=x86_64-pc-win32)
+  add_compile_options(/winsysroot /opt/msvc /clang:--target=x86_64-pc-windows-msvc)
+  add_link_options(/winsysroot /opt/msvc /clang:--target=x86_64-pc-windows-msvc)
 
   set(MSVC True)
 endif()

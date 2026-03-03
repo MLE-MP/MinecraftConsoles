@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "../../Minecraft.h"
-#include "../../MultiplayerLocalPlayer.h"
+#include "../../MultiPlayerLocalPlayer.h"
 #include "../../MultiplayerLevel.h"
 #include "../../GameMode.h"
 #include "../../SurvivalMode.h"

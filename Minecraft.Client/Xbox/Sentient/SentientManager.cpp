@@ -5,7 +5,7 @@
 
 #include "../GameConfig/Minecraft.spa.h"
 #include "../../Minecraft.h"
-#include "../../MultiplayerLocalPlayer.h"
+#include "../../MultiPlayerLocalPlayer.h"
 #include "../../../Minecraft.World/Dimension.h"
 #include "../../../Minecraft.World/net.minecraft.world.level.h"
 #include "../../../Minecraft.World/net.minecraft.world.level.storage.h"

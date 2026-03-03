@@ -4,7 +4,7 @@
 #include "../../../Minecraft.World/Random.h"
 #include "../../../Minecraft.World/LevelData.h"
 #include "../../Minecraft.h"
-#include "../../MultiplayerLocalPlayer.h"
+#include "../../MultiPlayerLocalPlayer.h"
 #include "SoundEngine.h"
 #include "../../TexturePackRepository.h"
 #include "../../TexturePack.h"
