@@ -208,7 +208,7 @@ public:
 	// This is the TOTAL area of columns of chunks to be allocated for render round the players. So for one player, it would be a region of
 	// sqrt(PLAYER_RENDER_AREA) x sqrt(PLAYER_RENDER_AREA)
 #ifdef _LARGE_WORLDS
-	static const int	PLAYER_VIEW_DISTANCE = 18; // Straight line distance from centre to extent of visible world
+	static const int	PLAYER_VIEW_DISTANCE = 24; // Straight line distance from centre to extent of visible world
 	static const int	PLAYER_RENDER_AREA = (PLAYER_VIEW_DISTANCE * PLAYER_VIEW_DISTANCE * 4);
 #else
 	static const int	PLAYER_RENDER_AREA = 400;
