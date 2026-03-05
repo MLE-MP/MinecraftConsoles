@@ -279,19 +279,9 @@ static BOOL WINAPI HeadlessServerCtrlHandler(DWORD ctrlType)
 
 static void SetupHeadlessServerConsole()
 {
-	// Try to attach to the console we were launched from (cmd.exe, PowerShell, etc.)
-	// If that fails, allocate a new one. Either way, redirect CRT streams to it.
-	if (!AttachConsole(ATTACH_PARENT_PROCESS))
-	{
-		AllocConsole();
-	}
-
-	FILE* stream = NULL;
-	freopen_s(&stream, "CONIN$",  "r", stdin);
-	freopen_s(&stream, "CONOUT$", "w", stdout);
-	freopen_s(&stream, "CONOUT$", "w", stderr);
+	// Console is already inherited via /SUBSYSTEM:CONSOLE.
+	// Just retitle it and register the Ctrl handler.
 	SetConsoleTitleA("Minecraft Server");
-
 	SetConsoleCtrlHandler(HeadlessServerCtrlHandler, TRUE);
 }
 
@@ -1215,6 +1205,13 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	// Load stuff from launch options, including username
 	Win64LaunchOptions launchOptions = ParseLaunchOptions();
 	ApplyScreenMode(launchOptions.screenMode);
+
+	// In client mode, detach from the inherited console window so it doesn't
+	// linger behind the game. Server mode keeps it for output/input.
+	if (!launchOptions.serverMode)
+	{
+		FreeConsole();
+	}
 
 	// If no username, let's fall back
 	if (g_Win64Username[0] == 0)
