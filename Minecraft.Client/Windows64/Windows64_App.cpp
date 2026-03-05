@@ -1,4 +1,4 @@
-﻿﻿#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "..\Common\Consoles_App.h"
 #include "..\User.h"
 #include "..\..\Minecraft.Client\Minecraft.h"
