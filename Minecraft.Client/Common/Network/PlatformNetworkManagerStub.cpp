@@ -220,27 +220,47 @@ void CPlatformNetworkManagerStub::DoWork()
 		if (m_pIQNet->IsHost())
 			WinsockNetLayer::UpdateAdvertiseJoinable(true);
 	}
-	if (_iQNetStubState == QNET_STATE_IDLE)
-		TickSearch();
-	if (_iQNetStubState == QNET_STATE_GAME_PLAY && m_pIQNet->IsHost())
+	// Keep LAN search ticking whenever the join menu callback is active, even if QNet state
+	// is not idle due to prior connection attempts.
+	TickSearch();
+	if (m_pIQNet->IsHost())
 	{
 		BYTE disconnectedSmallId;
 		while (WinsockNetLayer::PopDisconnectedSmallId(&disconnectedSmallId))
 		{
-			IQNetPlayer* qnetPlayer = m_pIQNet->GetPlayerBySmallId(disconnectedSmallId);
-			if (qnetPlayer != NULL && qnetPlayer->m_smallId == disconnectedSmallId)
+			if (disconnectedSmallId == 0 || disconnectedSmallId >= MINECRAFT_NET_MAX_PLAYERS)
+				continue;
+
+			app.DebugPrintf("Win64 LAN: Processing disconnected smallId=%d\n", disconnectedSmallId);
+
+			IQNetPlayer* qnetPlayer = &IQNet::m_player[disconnectedSmallId];
+			if (qnetPlayer->m_smallId == disconnectedSmallId)
 			{
-				NotifyPlayerLeaving(qnetPlayer);
+				if (qnetPlayer->GetCustomDataValue() != 0)
+				{
+					NotifyPlayerLeaving(qnetPlayer);
+				}
+				else
+				{
+					app.DebugPrintf("Win64 LAN: smallId=%d had no active network player object\n", disconnectedSmallId);
+				}
 				qnetPlayer->m_smallId = 0;
 				qnetPlayer->m_isRemote = false;
 				qnetPlayer->m_isHostPlayer = false;
 				qnetPlayer->m_gamertag[0] = 0;
 				qnetPlayer->SetCustomDataValue(0);
-				WinsockNetLayer::PushFreeSmallId(disconnectedSmallId);
-				if (IQNet::s_playerCount > 1)
-					IQNet::s_playerCount--;
 			}
+			WinsockNetLayer::PushFreeSmallId(disconnectedSmallId);
 		}
+
+		// Keep player-count in sync with active remote slots.
+		DWORD highestUsedIndex = 0;
+		for (DWORD i = 1; i < MINECRAFT_NET_MAX_PLAYERS; i++)
+		{
+			if (IQNet::m_player[i].GetCustomDataValue() != 0)
+				highestUsedIndex = i;
+		}
+		IQNet::s_playerCount = highestUsedIndex + 1;
 	}
 #endif
 }
@@ -654,6 +674,19 @@ bool CPlatformNetworkManagerStub::SystemFlagGet(INetworkPlayer *pNetworkPlayer, 
 	return false;
 }
 
+void CPlatformNetworkManagerStub::SystemFlagClearForSystem(INetworkPlayer* pNetworkPlayer)
+{
+	if (pNetworkPlayer == NULL) return;
+
+	for (unsigned int i = 0; i < m_playerFlags.size(); i++)
+	{
+		if (pNetworkPlayer->IsSameSystem(m_playerFlags[i]->m_pNetworkPlayer))
+		{
+			memset(m_playerFlags[i]->flags, 0, m_playerFlags[i]->count / 8);
+		}
+	}
+}
+
 wstring CPlatformNetworkManagerStub::GatherStats()
 {
 	return L"";
@@ -727,24 +760,6 @@ void CPlatformNetworkManagerStub::SearchForGames()
 
 		info->sessionId = (SessionID)((unsigned __int64)inet_addr(lanSessions[i].hostIP) | ((unsigned __int64)lanSessions[i].hostPort << 32));
 
-		friendsSessions[0].push_back(info);
-	}
-
-	if (g_Win64MultiplayerJoin && g_Win64MultiplayerIP[0] != 0)
-	{
-		FriendSessionInfo* info = new FriendSessionInfo();
-		wchar_t label[128];
-		swprintf_s(label, L"%S:%d", g_Win64MultiplayerIP, g_Win64MultiplayerPort);
-		size_t nameLen = wcslen(label);
-		info->displayLabel = new wchar_t[nameLen + 1];
-		wcscpy_s(info->displayLabel, nameLen + 1, label);
-		info->displayLabelLength = (unsigned char)nameLen;
-		info->displayLabelViewableStartIndex = 0;
-		info->data.isReadyToJoin = true;
-		info->data.isJoinable = true;
-		strncpy_s(info->data.hostIP, sizeof(info->data.hostIP), g_Win64MultiplayerIP, _TRUNCATE);
-		info->data.hostPort = g_Win64MultiplayerPort;
-		info->sessionId = (SessionID)((unsigned __int64)inet_addr(g_Win64MultiplayerIP) | ((unsigned __int64)g_Win64MultiplayerPort << 32));
 		friendsSessions[0].push_back(info);
 	}
 
