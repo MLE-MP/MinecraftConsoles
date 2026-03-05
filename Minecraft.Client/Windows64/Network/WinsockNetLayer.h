@@ -12,7 +12,7 @@
 #pragma comment(lib, "winhttp.lib")
 #include "..\..\Common\Network\NetworkPlayerInterface.h"
 
-#pragma comment(lib, "Ws2_32.lib")
+#pragma comment(lib, "ws2_32.lib")
 
 struct HttpResponse {
 	int status;

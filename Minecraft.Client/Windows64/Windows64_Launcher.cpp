@@ -1,7 +1,7 @@
 ﻿#include "stdafx.h"
 
 #include "Windows64_Launcher.h"
-#include "Xbox/resource.h"
+#include "Xbox/Resource.h"
 
 #include "Network/WinsockNetLayer.h"
 
