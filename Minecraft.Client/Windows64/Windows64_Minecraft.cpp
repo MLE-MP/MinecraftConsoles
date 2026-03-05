@@ -279,13 +279,18 @@ static BOOL WINAPI HeadlessServerCtrlHandler(DWORD ctrlType)
 
 static void SetupHeadlessServerConsole()
 {
-	// Console is already inherited via /SUBSYSTEM:CONSOLE.
-	// Disable buffering so output appears immediately in terminals and Docker logs.
-	setvbuf(stdout, NULL, _IONBF, 0);
-	setvbuf(stderr, NULL, _IONBF, 0);
-	SetConsoleTitleA("Minecraft Server");
+	if (AllocConsole())
+	{
+		FILE* stream = NULL;
+		freopen_s(&stream, "CONIN$", "r", stdin);
+		freopen_s(&stream, "CONOUT$", "w", stdout);
+		freopen_s(&stream, "CONOUT$", "w", stderr);
+		SetConsoleTitleA("Minecraft Server");
+	}
+
 	SetConsoleCtrlHandler(HeadlessServerCtrlHandler, TRUE);
 }
+
 void DefineActions(void)
 {
 	// The app needs to define the actions required, and the possible mappings for these
@@ -1207,13 +1212,6 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	Win64LaunchOptions launchOptions = ParseLaunchOptions();
 	ApplyScreenMode(launchOptions.screenMode);
 
-	// In client mode, detach from the inherited console window so it doesn't
-	// linger behind the game. Server mode keeps it for output/input.
-	if (!launchOptions.serverMode)
-	{
-		FreeConsole();
-	}
-
 	// If no username, let's fall back
 	if (g_Win64Username[0] == 0)
 	{
@@ -1232,22 +1230,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 		return FALSE;
 	}
 
-    hMyInst = hInstance;
-
-	// Server mode: skip window creation and D3D entirely.
-	// Both will fail in headless/Wine environments and are not needed.
-	if (launchOptions.serverMode)
-	{
-		return RunHeadlessServer();
-	}
-
-	// Client mode only from here down
-	MyRegisterClass(hInstance);
-
-	if (!InitInstance(hInstance, nCmdShow))
-	{
-		return FALSE;
-	}
+	hMyInst=hInstance;
 
 	if( FAILED( InitDevice() ) )
 	{
@@ -1259,6 +1242,13 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	if (LoadFullscreenOption() && !g_isFullscreen)
 	{
 		ToggleFullscreen();
+	}
+
+	if (launchOptions.serverMode)
+	{
+		int serverResult = RunHeadlessServer();
+		CleanupDevice();
+		return serverResult;
 	}
 
 #if 0
