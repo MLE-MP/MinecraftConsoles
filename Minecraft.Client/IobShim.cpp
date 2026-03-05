@@ -16,13 +16,15 @@ END
 
 #include <cstdio>
 
-extern "C" FILE* __cdecl __acrt_iob_func(unsigned index);
+extern "C" FILE *__cdecl __acrt_iob_func(unsigned index);
 
-extern "C" __attribute__((naked)) FILE* __cdecl __iob_func(void) {
+#if defined(_MSC_VER) && defined(__clang__)
+extern "C" [[__gnu__::__naked__]] FILE *__cdecl __iob_func(void)
+{
     __asm__(
         ".intel_syntax noprefix\n\t"
         "mov ecx, 0\n\t"
         "jmp __acrt_iob_func\n\t"
-        ".att_syntax prefix"
-    );
+        ".att_syntax prefix");
 }
+#endif

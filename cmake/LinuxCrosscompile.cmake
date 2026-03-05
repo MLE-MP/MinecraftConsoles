@@ -8,7 +8,9 @@ set(CMAKE_C_COMPILER_FRONTEND_VARIANT MSVC)
 set(CMAKE_CXX_COMPILER_FRONTEND_VARIANT MSVC)
 
 set(WINDOWS_SDK_PATH "" CACHE PATH "Path to Windows SDK root")
-set(CMAKE_TRY_COMPILE_PLATFORM_VARIABLES WINDOWS_SDK_PATH) # You have no idea how much suffering I went through to get this solution. I hate this build system with all my 
+set(CMAKE_TRY_COMPILE_PLATFORM_VARIABLES WINDOWS_SDK_PATH)
+# You have no idea how much suffering I went through to get this solution.
+# I hate this build system so much
 
 message(STATUS "WINDOWS_SDK_PATH=${WINDOWS_SDK_PATH}")
 
