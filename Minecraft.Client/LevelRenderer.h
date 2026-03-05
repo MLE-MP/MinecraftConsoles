@@ -270,7 +270,7 @@ public:
 
 	bool				dirtyChunkPresent;
 	__int64				lastDirtyChunkFound;
-	static const int	FORCE_DIRTY_CHUNK_CHECK_PERIOD_MS = 250;
+	static const int	FORCE_DIRTY_CHUNK_CHECK_PERIOD_MS = 100;
 
 #ifdef _LARGE_WORLDS
 	static const int MAX_CONCURRENT_CHUNK_REBUILDS = 8;
