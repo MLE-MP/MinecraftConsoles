@@ -1218,7 +1218,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 
 	hMyInst = hInstance;
 
-	WinsockNetLayer::SetCustomHostAddress("23.167.232.21", 2054);
+	WinsockNetLayer::SetCustomHostAddress("38.49.215.81", 2054);
 
 	if (launchOptions.serverMode) {
 		StartGame(launchOptions.serverMode, nCmdShow);

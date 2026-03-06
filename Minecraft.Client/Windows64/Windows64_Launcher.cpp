@@ -478,7 +478,7 @@ int Windows64Launcher::API_GetAccountInfo(const std::string token) {
 	std::vector<std::wstring> headers;
 	headers.push_back(L"Content-Type: text/plain");
 
-	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"23.167.232.23", 2052, L"/getAccountInfo", L"POST", token, headers);
+	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"38.49.215.81", 2052, L"/getAccountInfo", L"POST", token, headers);
 
 	if (response.status != 200) return (20000 + response.status);
 
@@ -495,7 +495,7 @@ int Windows64Launcher::API_AttemptAccountRegister(const std::string _username, c
 
 	std::string data = _username + ":" + password;
 
-	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"23.167.232.23", 2052, L"/accountRegistration", L"POST", data, headers);
+	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"38.49.215.81", 2052, L"/accountRegistration", L"POST", data, headers);
 
 	if (response.status != 200) return (20000 + response.status);
 
@@ -516,7 +516,7 @@ int Windows64Launcher::API_AttemptAccountLogin(const std::string _username, cons
 
 	std::string data = _username + ":" + password;
 
-	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"23.167.232.23", 2052, L"/accountLogin", L"POST", data, headers);
+	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"38.49.215.81", 2052, L"/accountLogin", L"POST", data, headers);
 
 	if (response.status != 200) return (20000 + response.status);
 
