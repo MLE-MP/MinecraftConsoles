@@ -32,6 +32,11 @@ WCHAR *GameRuleManager::wchTagNameA[] =
 	L"CollectItem", // eGameRuleType_CollectItemRule
 	L"CompleteAll", // eGameRuleType_CompleteAllRule
 	L"UpdatePlayer", // eGameRuleType_UpdatePlayerRule
+	L"Powerup", // eGameRuleType_Powerup
+	L"ThermalArea", // eGameRuleType_ThermalArea
+	L"TargetArea", // eGameRuleType_TargetArea
+	L"Checkpoint", // eGameRuleType_Checkpoint
+	L"LayerGeneration", // eGameRuleType_LayerGeneration
 };
 
 WCHAR *GameRuleManager::wchAttrNameA[] =

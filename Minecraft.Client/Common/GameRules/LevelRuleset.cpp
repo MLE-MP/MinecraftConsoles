@@ -32,6 +32,30 @@ GameRuleDefinition *LevelRuleset::addChild(ConsoleGameRules::EGameRuleType ruleT
 		rule = new NamedAreaRuleDefinition();
 		m_areas.push_back((NamedAreaRuleDefinition *)rule);
 	}
+	else if(ruleType == ConsoleGameRules::eGameRuleType_Checkpoint)
+	{
+		rule = new CheckpointRuleDefinition();
+		m_areas.push_back((NamedAreaRuleDefinition *)rule);
+	}
+	else if(ruleType == ConsoleGameRules::eGameRuleType_TargetArea)
+	{
+		rule = new TargetAreaRuleDefinition();
+		m_areas.push_back((NamedAreaRuleDefinition *)rule);
+	}
+	else if(ruleType == ConsoleGameRules::eGameRuleType_Powerup)
+	{
+		rule = new PowerupRuleDefinition();
+		m_areas.push_back((NamedAreaRuleDefinition *)rule);
+	}
+	else if(ruleType == ConsoleGameRules::eGameRuleType_ThermalArea)
+	{
+		rule = new ThermalAreaRuleDefinition();
+		m_areas.push_back((NamedAreaRuleDefinition *)rule);
+	}
+	else if(ruleType == ConsoleGameRules::eGameRuleType_LayerGeneration)
+	{
+		rule = new LayerGenerationRuleDefinition();
+	}
 	else
 	{
 		rule = CompoundGameRuleDefinition::addChild(ruleType);

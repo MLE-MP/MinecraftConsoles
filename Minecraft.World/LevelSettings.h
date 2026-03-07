@@ -14,6 +14,8 @@ public:
 	static GameType *SURVIVAL;
 	static GameType *CREATIVE;
 	static GameType *ADVENTURE;
+	static GameType *SPECTATOR;
+	static GameType *LOBBY;
 
 	static void staticCtor();
 

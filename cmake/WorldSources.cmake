@@ -798,4 +798,11 @@ set(MINECRAFT_WORLD_SOURCES
   "compression.cpp"
   "stdafx.cpp"
   "system.cpp"
+  "CommonMasterGameMode.cpp"
+  "MasterGameMode.cpp"
+  "MiniGameDef.cpp"
+  "MiniGameMedals.cpp"
+  "MapGenerator.cpp"
+  "TumbleGenerator.cpp"
+  "WallGenerator.cpp"
 )

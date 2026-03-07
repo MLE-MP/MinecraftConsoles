@@ -76,6 +76,7 @@ private:
 	{
 		eAction_None=0,
 		eAction_RunGame,
+		eAction_RunMiniGames,
 		eAction_RunLeaderboards,
 		eAction_RunAchievements,
 		eAction_RunHelpAndOptions,
@@ -138,6 +139,7 @@ protected:
 
 private:
 	void RunPlayGame(int iPad);
+	void RunMiniGames(int iPad);
 	void RunLeaderboards(int iPad);
 	void RunUnlockOrDLC(int iPad);
 	void RunAchievements(int iPad);

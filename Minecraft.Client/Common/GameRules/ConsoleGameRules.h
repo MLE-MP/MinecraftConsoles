@@ -29,4 +29,10 @@
 #include "BiomeOverride.h"
 #include "StartFeature.h"
 
+#include "CheckpointRuleDefinition.h"
+#include "TargetAreaRuleDefinition.h"
+#include "PowerupRuleDefinition.h"
+#include "ThermalAreaRuleDefinition.h"
+#include "LayerGenerationRuleDefinition.h"
+
 #include "GameRulesInstance.h"

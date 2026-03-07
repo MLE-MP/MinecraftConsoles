@@ -7,6 +7,8 @@ GameType *GameType::NOT_SET = NULL;
 GameType *GameType::SURVIVAL= NULL;
 GameType *GameType::CREATIVE = NULL;
 GameType *GameType::ADVENTURE = NULL;
+GameType *GameType::SPECTATOR = NULL;
+GameType *GameType::LOBBY = NULL;
 
 void GameType::staticCtor()
 {
@@ -14,6 +16,8 @@ void GameType::staticCtor()
 	SURVIVAL = new GameType(0, L"survival");
 	CREATIVE = new GameType(1, L"creative");
 	ADVENTURE = new GameType(2, L"adventure");
+	SPECTATOR = new GameType(3, L"spectator");
+	LOBBY = new GameType(4, L"lobby");
 }
 
 GameType::GameType(int id, const wstring &name)
@@ -40,6 +44,20 @@ void GameType::updatePlayerAbilities(Abilities *abilities)
 		abilities->instabuild = true;
 		abilities->invulnerable = true;
 	}
+	else if (this == SPECTATOR)
+	{
+		abilities->mayfly = true;
+		abilities->instabuild = false;
+		abilities->invulnerable = true;
+		abilities->flying = true;
+	}
+	else if (this == LOBBY)
+	{
+		abilities->mayfly = false;
+		abilities->instabuild = false;
+		abilities->invulnerable = true;
+		abilities->flying = false;
+	}
 	else
 	{
 		abilities->mayfly = false;
@@ -52,12 +70,12 @@ void GameType::updatePlayerAbilities(Abilities *abilities)
 
 bool GameType::isAdventureRestricted()
 {
-	return this == ADVENTURE;
+	return this == ADVENTURE || this == SPECTATOR || this == LOBBY;
 }
 
 bool GameType::isCreative()
 {
-	return this == CREATIVE;
+	return this == CREATIVE || this == LOBBY;
 }
 
 bool GameType::isSurvival()
@@ -71,6 +89,8 @@ GameType *GameType::byId(int id)
 	else if(id == SURVIVAL->id) return SURVIVAL;
 	else if(id == CREATIVE->id) return CREATIVE;
 	else if(id == ADVENTURE->id) return ADVENTURE;
+	else if(id == SPECTATOR->id) return SPECTATOR;
+	else if(id == LOBBY->id) return LOBBY;
 
 	return SURVIVAL;
 }
@@ -81,6 +101,8 @@ GameType *GameType::byName(const wstring &name)
 	else if(name.compare(SURVIVAL->name) == 0) return SURVIVAL;
 	else if(name.compare(CREATIVE->name) == 0) return CREATIVE;
 	else if(name.compare(ADVENTURE->name) == 0) return ADVENTURE;
+	else if(name.compare(SPECTATOR->name) == 0) return SPECTATOR;
+	else if(name.compare(LOBBY->name) == 0) return LOBBY;
 
 	return SURVIVAL;
 }

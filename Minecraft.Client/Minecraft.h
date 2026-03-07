@@ -38,9 +38,13 @@ class ColourTable;
 class MultiPlayerGameMode;
 class PsPlusUpsellWrapper;
 
+class MiniGameDef;
+class MasterGameMode;
+
 #include "..\Minecraft.World\File.h"
 #include "..\Minecraft.World\DisconnectPacket.h"
 #include "..\Minecraft.World\C4JThread.h"
+#include "..\Minecraft.World\EMiniGameId.h"
 #include "ResourceLocation.h"
 
 using namespace std;
@@ -348,4 +352,12 @@ public:
 #if defined __ORBIS__
 	static int MustSignInReturnedPSN(void *pParam, int iPad, C4JStorage::EMessageResult result);
 #endif
+
+	// Minigame support
+	static bool InMiniGame(EMiniGameId id, bool includeNormal);
+	MiniGameDef *GetMiniGame();
+	void SetupMiniGameInstance(MiniGameDef &def, int param);
+
+	MiniGameDef *m_lobbyGameMode;
+	MasterGameMode *m_masterGameMode;
 };

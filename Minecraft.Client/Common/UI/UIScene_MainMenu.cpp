@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "..\..\..\Minecraft.World\Mth.h"
+#include "..\..\..\Minecraft.World\MiniGameDef.h"
 #include "..\..\..\Minecraft.World\StringHelpers.h"
 #include "..\..\..\Minecraft.World\Random.h"
 #include "..\..\User.h"
@@ -41,7 +42,7 @@ UIScene_MainMenu::UIScene_MainMenu(int iPad, void *initData, UILayer *parentLaye
 #endif
 
 	m_buttons[(int)eControl_Leaderboards].init(IDS_LEADERBOARDS,eControl_Leaderboards);
-	m_buttons[(int)eControl_Achievements].init( (UIString)IDS_ACHIEVEMENTS,eControl_Achievements);
+	m_buttons[(int)eControl_Achievements].init(UIString(L"Mini Games"),eControl_Achievements);
 	m_buttons[(int)eControl_HelpAndOptions].init(IDS_HELP_AND_OPTIONS,eControl_HelpAndOptions);
 	if(ProfileManager.IsFullVersion())
 	{
@@ -105,6 +106,11 @@ UIScene_MainMenu::UIScene_MainMenu(int iPad, void *initData, UILayer *parentLaye
 
 	// 4J Stu - Clear out any loaded game rules
 	app.setLevelGenerationOptions(NULL);
+	Minecraft *pMinecraft = Minecraft::GetInstance();
+	if(pMinecraft != NULL)
+	{
+		pMinecraft->SetupMiniGameInstance(MiniGameDef::GetCustomGameModeById(MINIGAME_NORMAL_WORLD, true), 0);
+	}
 
 	// 4J Stu - Reset the leaving game flag so that we correctly handle signouts while in the menus
 	g_NetworkManager.ResetLeavingGame();
@@ -342,8 +348,8 @@ void UIScene_MainMenu::handlePress(F64 controlId, F64 childId)
 		//CD - Added for audio
 		ui.PlayUISFX(eSFX_Press);
 
-		m_eAction=eAction_RunAchievements;
-		signInReturnedFunc = &UIScene_MainMenu::Achievements_SignInReturned;
+		m_eAction=eAction_RunMiniGames;
+		signInReturnedFunc = &UIScene_MainMenu::CreateLoad_SignInReturned;
 		break;
 	case eControl_HelpAndOptions:
 		//CD - Added for audio
@@ -426,6 +432,17 @@ void UIScene_MainMenu::RunAction(int iPad)
 	switch(m_eAction)
 	{
 	case eAction_RunGame:
+		if(Minecraft::GetInstance() != NULL)
+		{
+			Minecraft::GetInstance()->SetupMiniGameInstance(MiniGameDef::GetCustomGameModeById(MINIGAME_NORMAL_WORLD, true), 0);
+		}
+		RunPlayGame(iPad);
+		break;
+	case eAction_RunMiniGames:
+		if(Minecraft::GetInstance() != NULL)
+		{
+			Minecraft::GetInstance()->SetupMiniGameInstance(MiniGameDef::GetCustomGameModeById(MINIGAME_LOBBY, true), 0);
+		}
 		RunPlayGame(iPad);
 		break;
 	case eAction_RunLeaderboards:
@@ -521,6 +538,7 @@ int UIScene_MainMenu::MustSignInReturned(void *pParam, int iPad, C4JStorage::EMe
 		switch(pClass->m_eAction)
 		{
 		case eAction_RunGame:			ProfileManager.RequestSignInUI(false,  true, false, false, true, &UIScene_MainMenu::CreateLoad_SignInReturned,		pClass,	iPad );	break;
+		case eAction_RunMiniGames:		ProfileManager.RequestSignInUI(false,  true, false, false, true, &UIScene_MainMenu::CreateLoad_SignInReturned,		pClass,	iPad );	break;
 		case eAction_RunHelpAndOptions:	ProfileManager.RequestSignInUI(false, false,  true, false, true, &UIScene_MainMenu::HelpAndOptions_SignInReturned,	pClass,	iPad );	break;										 	   
 		case eAction_RunLeaderboards:	ProfileManager.RequestSignInUI(false, false,  true, false, true, &UIScene_MainMenu::Leaderboards_SignInReturned,	pClass,	iPad );	break;										 	   
 		case eAction_RunAchievements:	ProfileManager.RequestSignInUI(false, false,  true, false, true, &UIScene_MainMenu::Achievements_SignInReturned,	pClass,	iPad );	break;										 	   

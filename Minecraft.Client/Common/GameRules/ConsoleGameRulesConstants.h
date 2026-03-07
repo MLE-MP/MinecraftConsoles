@@ -31,6 +31,13 @@ public:
 		eGameRuleType_CompleteAllRule,
 		eGameRuleType_UpdatePlayerRule,
 
+		// Minigame rule types
+		eGameRuleType_Powerup,
+		eGameRuleType_ThermalArea,
+		eGameRuleType_TargetArea,
+		eGameRuleType_Checkpoint,
+		eGameRuleType_LayerGeneration,
+
 		eGameRuleType_Count
 	};
 

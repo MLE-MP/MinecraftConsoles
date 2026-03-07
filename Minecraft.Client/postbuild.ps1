@@ -40,3 +40,28 @@ foreach ($copy in $copies) {
 		xcopy /q /y /i /s /e /d "$src" "$dst" 2>$null
     }
 }
+
+$iggyDll = Join-Path $ProjectDir "Windows64\Iggy\lib\redist64\iggy_w64.dll"
+if (Test-Path $iggyDll) {
+    Copy-Item -Path $iggyDll -Destination (Join-Path $OutDir "iggy_w64.dll") -Force
+}
+
+$milesRedist = Join-Path $ProjectDir "Windows64\Miles\lib\redist64"
+if (Test-Path $milesRedist) {
+    Get-ChildItem -Path $milesRedist -File | ForEach-Object {
+        Copy-Item -Path $_.FullName -Destination (Join-Path $OutDir $_.Name) -Force
+    }
+}
+
+$mssCandidates = @(
+    (Join-Path $ProjectDir "Windows64\Miles\lib\redist64\mss64.dll"),
+    "$env:ProgramFiles(x86)\Steam\bin\mss64.dll",
+    "$env:ProgramFiles\Steam\bin\mss64.dll"
+)
+
+foreach ($mss in $mssCandidates) {
+    if ($mss -and (Test-Path $mss)) {
+        Copy-Item -Path $mss -Destination (Join-Path $OutDir "mss64.dll") -Force
+        break
+    }
+}

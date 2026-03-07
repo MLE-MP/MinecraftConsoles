@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "Minecraft.h"
 #include "GameMode.h"
+#include "..\Minecraft.World\MiniGameDef.h"
+#include "..\Minecraft.World\MasterGameMode.h"
 #include "Timer.h"
 #include "ProgressRenderer.h"
 #include "LevelRenderer.h"
@@ -137,6 +139,8 @@ Minecraft::Minecraft(Component *mouseComponent, Canvas *parent, MinecraftApplet 
 	screen = NULL;
 	localPlayerIdx = 0;
 	rightClickDelay = 0;
+	m_lobbyGameMode = NULL;
+	m_masterGameMode = NULL;
 
 	// 4J Stu Added
 	InitializeCriticalSection( &ProgressRenderer::s_progress );
@@ -4561,6 +4565,29 @@ void Minecraft::respawnPlayer(int iPad, int dimension, int newEntityId)
 	if (dynamic_cast<DeathScreen *>(screen) != NULL) setScreen(NULL);
 
 	gameRenderer->EnableUpdateThread();
+}
+
+bool Minecraft::InMiniGame(EMiniGameId id, bool includeNormal)
+{
+	Minecraft *mc = GetInstance();
+	if(!mc || !mc->m_lobbyGameMode)
+		return false;
+
+	EMiniGameId currentId = mc->m_lobbyGameMode->GetId();
+	if(includeNormal && currentId == MINIGAME_NORMAL_WORLD)
+		return false;
+
+	return currentId == id;
+}
+
+MiniGameDef *Minecraft::GetMiniGame()
+{
+	return m_lobbyGameMode;
+}
+
+void Minecraft::SetupMiniGameInstance(MiniGameDef &def, int param)
+{
+	m_lobbyGameMode = &def;
 }
 
 void Minecraft::start(const wstring& name, const wstring& sid)
