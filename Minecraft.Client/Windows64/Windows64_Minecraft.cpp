@@ -22,6 +22,9 @@
 #include "..\..\Minecraft.World\net.minecraft.world.level.tile.h"
 
 #include "..\ClientConnection.h"
+#include "..\Minecraft.h"
+#include "..\ChatScreen.h"
+#include "KeyboardMouseInput.h"
 #include "..\User.h"
 #include "..\..\Minecraft.World\Socket.h"
 #include "..\..\Minecraft.World\ThreadName.h"
@@ -54,6 +57,7 @@
 #ifdef _MSC_VER
 #pragma comment(lib, "legacy_stdio_definitions.lib")
 #endif
+#include <CommCtrl.h>
 
 HINSTANCE hMyInst;
 LRESULT CALLBACK DlgProc(HWND hWndDlg, UINT Msg, WPARAM wParam, LPARAM lParam);
@@ -92,6 +96,10 @@ DWORD dwProfileSettingsA[NUM_PROFILE_VALUES]=
 
 BOOL g_bWidescreen = TRUE;
 
+// Screen resolution — auto-detected from the monitor at startup.
+// The 3D world renders at native resolution; Flash UI is 16:9-fitted and centered
+// within each viewport (pillarboxed on ultrawide, letterboxed on tall displays).
+// ApplyScreenMode() can still override these for debug/test resolutions via launch args.
 int g_iScreenWidth = 1920;
 int g_iScreenHeight = 1080;
 
@@ -116,6 +124,7 @@ struct Win64LaunchOptions
 {
 	int screenMode;
 	bool serverMode;
+	bool fullscreen;
 };
 
 static void CopyWideArgToAnsi(LPCWSTR source, char* dest, size_t destSize)
@@ -230,9 +239,13 @@ static Win64LaunchOptions ParseLaunchOptions()
 
 	g_Win64DedicatedServer = options.serverMode;
 
-	/*for (int i = 1; i < argc; ++i)
+	for (int i = 1; i < argc; ++i)
 	{
-		if (_wcsicmp(argv[i], L"-ip") == 0 && (i + 1) < argc)
+		if (_wcsicmp(argv[i], L"-name") == 0 && (i + 1) < argc)
+		{
+			CopyWideArgToAnsi(argv[++i], g_Win64Username, sizeof(g_Win64Username));
+		}
+		else if (_wcsicmp(argv[i], L"-ip") == 0 && (i + 1) < argc)
 		{
 			char ipBuf[256];
 			CopyWideArgToAnsi(argv[++i], ipBuf, sizeof(ipBuf));
@@ -258,7 +271,9 @@ static Win64LaunchOptions ParseLaunchOptions()
 					g_Win64MultiplayerPort = (int)port;
 			}
 		}
-	}*/
+		else if (_wcsicmp(argv[i], L"-fullscreen") == 0)
+			options.fullscreen = true;
+	}
 
 	LocalFree(argv);
 	return options;
@@ -567,11 +582,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		g_KBMInput.SetWindowFocused(true);
 		break;
 
+	case WM_CHAR:
+		// Buffer typed characters so UIScene_Keyboard can dispatch them to the Iggy Flash player
+
 	case WM_KEYDOWN:
 	case WM_SYSKEYDOWN:
 	{
-		int vk = (int)wParam;
-		if (lParam & 0x40000000) break; // ignore auto-repeat
+		int vk = static_cast<int>(wParam);
+		if ((lParam & 0x40000000) && vk != VK_LEFT && vk != VK_RIGHT && vk != VK_BACK)
+			break;
+#ifdef _WINDOWS64
+		Minecraft* pm = Minecraft::GetInstance();
+		ChatScreen* chat = pm && pm->screen ? dynamic_cast<ChatScreen*>(pm->screen) : nullptr;
+#endif
 		if (vk == VK_SHIFT)
 			vk = (MapVirtualKey((lParam >> 16) & 0xFF, MAPVK_VSC_TO_VK_EX) == VK_RSHIFT) ? VK_RSHIFT : VK_LSHIFT;
 		else if (vk == VK_CONTROL)
@@ -579,12 +602,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		else if (vk == VK_MENU)
 			vk = (lParam & (1 << 24)) ? VK_RMENU : VK_LMENU;
 		g_KBMInput.OnKeyDown(vk);
-		break;
+		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
 	case WM_KEYUP:
 	case WM_SYSKEYUP:
 	{
-		int vk = (int)wParam;
+		int vk = static_cast<int>(wParam);
 		if (vk == VK_SHIFT)
 			vk = (MapVirtualKey((lParam >> 16) & 0xFF, MAPVK_VSC_TO_VK_EX) == VK_RSHIFT) ? VK_RSHIFT : VK_LSHIFT;
 		else if (vk == VK_CONTROL)
@@ -877,6 +900,7 @@ HRESULT InitDevice()
 
 	RenderManager.Initialise(g_pd3dDevice, g_pSwapChain);
 
+
 	return S_OK;
 }
 
@@ -997,9 +1021,6 @@ static Minecraft* InitialiseMinecraftRuntime()
 	app.InitGameSettings();
 	app.InitialiseTips();
 
-	pMinecraft->options->set(Options::Option::MUSIC, 1.0f);
-	pMinecraft->options->set(Options::Option::SOUND, 1.0f);
-
 	return pMinecraft;
 }
 
@@ -1086,8 +1107,6 @@ static int RunHeadlessServer()
 	app.SetGameHostOption(eGameHostOption_NaturalRegeneration, 1);
 	app.SetGameHostOption(eGameHostOption_DoDaylightCycle, 1);
 
-	app.SetGameSettings(ProfileManager.GetPrimaryPad(), eGameSetting_Autosave, 1);
-
 	MinecraftServer::resetFlags();
 	g_NetworkManager.HostGame(0, false, true, MINECRAFT_NET_MAX_PLAYERS, 0);
 
@@ -1173,12 +1192,6 @@ static int RunHeadlessServer()
 
 		Sleep(10);
 	}
-	//printf("Saving World...\n");
-
-	//doesnt seem to work, lets just stick with forcing save on close
-	//C4JThread* saveThread = new C4JThread(&IUIScene_PauseMenu::SaveWorldThreadProc, NULL, "debugSaveGameDirect");
-	//saveThread->Run();
-	//saveThread->WaitForCompletion(5000);
 
 	printf("Stopping server...\n");
 	fflush(stdout);
@@ -1188,8 +1201,6 @@ static int RunHeadlessServer()
 	g_NetworkManager.LeaveGame(false);
 	return 0;
 }
-
-void StartGame(bool servermode, bool nCmdShow);
 
 int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 					   _In_opt_ HINSTANCE hPrevInstance,
@@ -1220,6 +1231,8 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 
 	WinsockNetLayer::SetCustomHostAddress("38.49.215.81", 2054);
 
+	void StartGame(bool servermode, bool nCmdShow);
+
 	if (launchOptions.serverMode) {
 		StartGame(launchOptions.serverMode, nCmdShow);
 	} else {
@@ -1234,11 +1247,10 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 }
 
 void StartGame(bool servermode, bool nCmdShow) {
+
 	// If no username, let's fall back
 	if (servermode)
 	{
-		// Default username will be "Player"
-
 		std::string authenticationToken = "";
 		std::string username = "";
 
@@ -1254,7 +1266,9 @@ void StartGame(bool servermode, bool nCmdShow) {
 		else {
 			MessageBoxW(g_hWnd, L"Unable To Connect To Saved Account", L"Dedicated Login Failed", MB_OK);
 		}
-		
+
+		// Default username will be "Player"
+		strncpy_s(g_Win64Username, sizeof(g_Win64Username), "Player", _TRUNCATE);
 	}
 
 	if (g_Win64Username[0] == 0) return;
@@ -1262,7 +1276,7 @@ void StartGame(bool servermode, bool nCmdShow) {
 	MultiByteToWideChar(CP_ACP, 0, g_Win64Username, -1, g_Win64UsernameW, 17);
 
 	// Initialize global strings
-	MyRegisterClass(hMyInst);
+	MyRegisterClass(g_hInst);
 
 	// Perform application initialization:
 	if (!InitInstance(hMyInst, servermode ? SW_HIDE : nCmdShow))
@@ -1270,7 +1284,9 @@ void StartGame(bool servermode, bool nCmdShow) {
 		return;
 	}
 
-	if (FAILED(InitDevice()))
+	hMyInst=g_hInst;
+
+	if( FAILED( InitDevice() ) )
 	{
 		CleanupDevice();
 		return;
@@ -1294,13 +1310,13 @@ void StartGame(bool servermode, bool nCmdShow) {
 
 #if 0
 	// Main message loop
-	MSG msg = { 0 };
-	while (WM_QUIT != msg.message)
+	MSG msg = {0};
+	while( WM_QUIT != msg.message )
 	{
-		if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		if( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) )
 		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+			TranslateMessage( &msg );
+			DispatchMessage( &msg );
 		}
 		else
 		{
@@ -1308,43 +1324,43 @@ void StartGame(bool servermode, bool nCmdShow) {
 		}
 	}
 
-	return (int)msg.wParam;
+	return (int) msg.wParam;
 #endif
 
-	static bool bTrialTimerDisplayed = true;
+	static bool bTrialTimerDisplayed=true;
 
 #ifdef MEMORY_TRACKING
 	ResetMem();
 	MEMORYSTATUS memStat;
 	GlobalMemoryStatus(&memStat);
-	printf("RESETMEM start: Avail. phys %d\n", memStat.dwAvailPhys / (1024 * 1024));
+	printf("RESETMEM start: Avail. phys %d\n",memStat.dwAvailPhys/(1024*1024));
 #endif
 
 #if 0
 	// Initialize D3D
-	hr = InitD3D(&pDevice, &d3dpp);
+	hr = InitD3D( &pDevice, &d3dpp );
 	g_pD3DDevice = pDevice;
-	if (FAILED(hr))
+	if( FAILED(hr) )
 	{
 		app.DebugPrintf
-		("Failed initializing D3D.\n");
+			( "Failed initializing D3D.\n" );
 		return -1;
 	}
 
 	// Initialize the application, assuming sharing of the d3d interface.
-	hr = app.InitShared(pDevice, &d3dpp,
-		XuiPNGTextureLoader);
+	hr = app.InitShared( pDevice, &d3dpp,
+		XuiPNGTextureLoader );
 
-	if (FAILED(hr))
+	if ( FAILED(hr) )
 	{
 		app.DebugPrintf
-		("Failed initializing application.\n");
+			( "Failed initializing application.\n" );
 
 		return -1;
 	}
 
 #endif
-	Minecraft* pMinecraft = InitialiseMinecraftRuntime();
+	Minecraft *pMinecraft = InitialiseMinecraftRuntime();
 	if (pMinecraft == NULL)
 	{
 		CleanupDevice();
@@ -1356,14 +1372,14 @@ void StartGame(bool servermode, bool nCmdShow) {
 	//Sleep(10000);
 #if 0
 	// Intro loop ?
-	while (app.IntroRunning())
+	while(app.IntroRunning())
 	{
 		ProfileManager.Tick();
 		// Tick XUI
 		app.RunFrame();
 
 		// 4J : WESTY : Added to ensure we always have clear background for intro.
-		RenderManager.SetClearColour(D3DCOLOR_RGBA(0, 0, 0, 255));
+		RenderManager.SetClearColour(D3DCOLOR_RGBA(0,0,0,255));
 		RenderManager.Clear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Render XUI
@@ -1376,24 +1392,24 @@ void StartGame(bool servermode, bool nCmdShow) {
 		hr = XuiTimersRun();
 	}
 #endif
-	MSG msg = { 0 };
-	while (WM_QUIT != msg.message && !app.m_bShutdown)
+	MSG msg = {0};
+	while( WM_QUIT != msg.message && !app.m_bShutdown)
 	{
 		g_KBMInput.Tick();
 
-		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		while( PeekMessage( &msg, NULL, 0, 0, PM_REMOVE ) )
 		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+			TranslateMessage( &msg );
+			DispatchMessage( &msg );
 			if (msg.message == WM_QUIT) break;
 		}
 		if (msg.message == WM_QUIT) break;
 
 		RenderManager.StartFrame();
 #if 0
-		if (pMinecraft->soundEngine->isStreamingWavebankReady() &&
+		if(pMinecraft->soundEngine->isStreamingWavebankReady() &&
 			!pMinecraft->soundEngine->isPlayingStreamingGameMusic() &&
-			!pMinecraft->soundEngine->isPlayingStreamingCDMusic())
+			!pMinecraft->soundEngine->isPlayingStreamingCDMusic() )
 		{
 			// play some music in the menus
 			pMinecraft->soundEngine->playStreaming(L"", 0, 0, 0, 0, 0, false);
@@ -1408,9 +1424,8 @@ void StartGame(bool servermode, bool nCmdShow) {
 		// 		}
 
 		app.UpdateTime();
-		PIXBeginNamedEvent(0, "Input manager tick");
+		PIXBeginNamedEvent(0,"Input manager tick");
 		InputManager.Tick();
-
 
 		// Detect KBM vs controller input mode
 		if (InputManager.IsPadConnected(0))
@@ -1440,48 +1455,48 @@ void StartGame(bool servermode, bool nCmdShow) {
 		}
 
 		PIXEndNamedEvent();
-		PIXBeginNamedEvent(0, "Profile manager tick");
+		PIXBeginNamedEvent(0,"Profile manager tick");
 		//		ProfileManager.Tick();
 		PIXEndNamedEvent();
-		PIXBeginNamedEvent(0, "Storage manager tick");
+		PIXBeginNamedEvent(0,"Storage manager tick");
 		StorageManager.Tick();
 		PIXEndNamedEvent();
-		PIXBeginNamedEvent(0, "Render manager tick");
+		PIXBeginNamedEvent(0,"Render manager tick");
 		RenderManager.Tick();
 		PIXEndNamedEvent();
 
 		// Tick the social networking manager.
-		PIXBeginNamedEvent(0, "Social network manager tick");
+		PIXBeginNamedEvent(0,"Social network manager tick");
 		//		CSocialManager::Instance()->Tick();
 		PIXEndNamedEvent();
 
 		// Tick sentient.
-		PIXBeginNamedEvent(0, "Sentient tick");
+		PIXBeginNamedEvent(0,"Sentient tick");
 		MemSect(37);
 		//		SentientManager.Tick();
 		MemSect(0);
 		PIXEndNamedEvent();
 
-		PIXBeginNamedEvent(0, "Network manager do work #1");
+		PIXBeginNamedEvent(0,"Network manager do work #1");
 		g_NetworkManager.DoWork();
 		PIXEndNamedEvent();
 
 		//		LeaderboardManager::Instance()->Tick();
 		// Render game graphics.
-		if (app.GetGameStarted())
+		if(app.GetGameStarted())
 		{
 			pMinecraft->applyFrameMouseLook();  // Per-frame mouse look (before ticks + render)
 			pMinecraft->run_middle();
-			app.SetAppPaused(g_NetworkManager.IsLocalGame() && g_NetworkManager.GetPlayerCount() == 1 && ui.IsPauseMenuDisplayed(ProfileManager.GetPrimaryPad()));
+			app.SetAppPaused( g_NetworkManager.IsLocalGame() && g_NetworkManager.GetPlayerCount() == 1 && ui.IsPauseMenuDisplayed(ProfileManager.GetPrimaryPad()) );
 		}
 		else
 		{
 			MemSect(28);
 			pMinecraft->soundEngine->tick(NULL, 0.0f);
 			MemSect(0);
-			pMinecraft->textures->tick(true, false);
+			pMinecraft->textures->tick(true,false);
 			IntCache::Reset();
-			if (app.GetReallyChangingSessionType())
+			if( app.GetReallyChangingSessionType() )
 			{
 				pMinecraft->tickAllConnections();		// Added to stop timing out when we are waiting after converting to an offline game
 			}
@@ -1495,28 +1510,28 @@ void StartGame(bool servermode, bool nCmdShow) {
 
 		MemPixStuff();
 
-		if (bResetMemTrack)
+		if( bResetMemTrack )
 		{
 			ResetMem();
 			MEMORYSTATUS memStat;
 			GlobalMemoryStatus(&memStat);
-			printf("RESETMEM: Avail. phys %d\n", memStat.dwAvailPhys / (1024 * 1024));
+			printf("RESETMEM: Avail. phys %d\n",memStat.dwAvailPhys/(1024*1024));
 			bResetMemTrack = false;
 		}
 
-		if (bDumpMemTrack)
+		if( bDumpMemTrack )
 		{
 			DumpMem();
 			bDumpMemTrack = false;
 			MEMORYSTATUS memStat;
 			GlobalMemoryStatus(&memStat);
-			printf("DUMPMEM: Avail. phys %d\n", memStat.dwAvailPhys / (1024 * 1024));
-			printf("Renderer used: %d\n", RenderManager.CBuffSize(-1));
+			printf("DUMPMEM: Avail. phys %d\n",memStat.dwAvailPhys/(1024*1024));
+			printf("Renderer used: %d\n",RenderManager.CBuffSize(-1));
 		}
 #endif
 #if 0
 		static bool bDumpTextureUsage = false;
-		if (bDumpTextureUsage)
+		if( bDumpTextureUsage )
 		{
 			RenderManager.TextureGetStats();
 			bDumpTextureUsage = false;
@@ -1528,36 +1543,36 @@ void StartGame(bool servermode, bool nCmdShow) {
 		app.HandleButtonPresses();
 
 		// store the minecraft renderstates, and re-set them after the xui render
-		GetRenderAndSamplerStates(pDevice, RenderStateA, SamplerStateA);
+		GetRenderAndSamplerStates(pDevice,RenderStateA,SamplerStateA);
 
 		// Tick XUI
-		PIXBeginNamedEvent(0, "Xui running");
+		PIXBeginNamedEvent(0,"Xui running");
 		app.RunFrame();
 		PIXEndNamedEvent();
 
 		// Render XUI
 
-		PIXBeginNamedEvent(0, "XUI render");
+		PIXBeginNamedEvent(0,"XUI render");
 		MemSect(7);
 		hr = app.Render();
 		MemSect(0);
-		GetRenderAndSamplerStates(pDevice, RenderStateA2, SamplerStateA2);
+		GetRenderAndSamplerStates(pDevice,RenderStateA2,SamplerStateA2);
 		PIXEndNamedEvent();
 
-		for (int i = 0; i < 8; i++)
+		for(int i=0;i<8;i++)
 		{
-			if (RenderStateA2[i] != RenderStateA[i])
+			if(RenderStateA2[i]!=RenderStateA[i])
 			{
 				//printf("Reseting RenderStateA[%d] after a XUI render\n",i);
-				pDevice->SetRenderState(RenderStateModes[i], RenderStateA[i]);
+				pDevice->SetRenderState(RenderStateModes[i],RenderStateA[i]);
 			}
 		}
-		for (int i = 0; i < 5; i++)
+		for(int i=0;i<5;i++)
 		{
-			if (SamplerStateA2[i] != SamplerStateA[i])
+			if(SamplerStateA2[i]!=SamplerStateA[i])
 			{
 				//printf("Reseting SamplerStateA[%d] after a XUI render\n",i);
-				pDevice->SetSamplerState(0, SamplerStateModes[i], SamplerStateA[i]);
+				pDevice->SetSamplerState(0,SamplerStateModes[i],SamplerStateA[i]);
 			}
 		}
 
@@ -1576,7 +1591,7 @@ void StartGame(bool servermode, bool nCmdShow) {
 			if (g_KBMInput.IsKeyPressed(VK_LMENU) || g_KBMInput.IsKeyPressed(VK_RMENU))
 			{
 				if (g_KBMInput.IsMouseGrabbed()) { g_KBMInput.SetMouseGrabbed(false); altToggleSuppressCapture = true; }
-				else if (shouldCapture) { g_KBMInput.SetMouseGrabbed(true);  altToggleSuppressCapture = false; }
+				else if (shouldCapture)   { g_KBMInput.SetMouseGrabbed(true);  altToggleSuppressCapture = false; }
 			}
 			else if (!shouldCapture)
 			{
@@ -1611,13 +1626,13 @@ void StartGame(bool servermode, bool nCmdShow) {
 		}
 
 #ifdef _DEBUG_MENUS_ENABLED
-		// F6 Open debug console
-		if (g_KBMInput.IsKeyPressed(VK_F6))
-		{
-			static bool s_debugConsole = false;
-			s_debugConsole = !s_debugConsole;
-			ui.ShowUIDebugConsole(s_debugConsole);
-		}
+        // F6 Open debug console
+        if (g_KBMInput.IsKeyPressed(VK_F6))
+        {
+        	static bool s_debugConsole = false;
+        	s_debugConsole = !s_debugConsole;
+        	ui.ShowUIDebugConsole(s_debugConsole);
+        }
 #endif
 
 		// F11 Toggle fullscreen
@@ -1638,38 +1653,44 @@ void StartGame(bool servermode, bool nCmdShow) {
 			}
 		}
 
+		// Open chat
+		if (g_KBMInput.IsKeyPressed('T') && app.GetGameStarted() && !ui.GetMenuDisplayed(0) && pMinecraft->screen == NULL)
+		{
+			pMinecraft->setScreen(new ChatScreen());
+			SetFocus(g_hWnd);
+		}
+
 #if 0
 		// has the game defined profile data been changed (by a profile load)
-		if (app.uiGameDefinedDataChangedBitmask != 0)
+		if(app.uiGameDefinedDataChangedBitmask!=0)
 		{
-			void* pData;
-			for (int i = 0; i < XUSER_MAX_COUNT; i++)
+			void *pData;
+			for(int i=0;i<XUSER_MAX_COUNT;i++)
 			{
-				if (app.uiGameDefinedDataChangedBitmask & (1 << i))
-				{
-					\
-						// It has - game needs to update its values with the data from the profile
-						pData = ProfileManager.GetGameDefinedProfileData(i);
-					// reset the changed flag
-					app.ClearGameSettingsChangedFlag(i);
-					app.DebugPrintf("***  - APPLYING GAME SETTINGS CHANGE for pad %d\n", i);
-					app.ApplyGameSettingsChanged(i);
+				if(app.uiGameDefinedDataChangedBitmask&(1<<i))
+				{\
+				// It has - game needs to update its values with the data from the profile
+				pData=ProfileManager.GetGameDefinedProfileData(i);
+				// reset the changed flag
+				app.ClearGameSettingsChangedFlag(i);
+				app.DebugPrintf("***  - APPLYING GAME SETTINGS CHANGE for pad %d\n",i);
+				app.ApplyGameSettingsChanged(i);
 
 #ifdef _DEBUG_MENUS_ENABLED
-					if (app.DebugSettingsOn())
-					{
-						app.ActionDebugMask(i);
-					}
-					else
-					{
-						// force debug mask off
-						app.ActionDebugMask(i, true);
-					}
+				if(app.DebugSettingsOn())
+				{
+					app.ActionDebugMask(i);
+				}
+				else
+				{
+					// force debug mask off
+					app.ActionDebugMask(i,true);
+				}
 #endif
-					// clear the stats first - there could have beena signout and sign back in in the menus
-					// need to clear the player stats - can't assume it'll be done in setlevel - we may not be in the game
-					pMinecraft->stats[i]->clear();
-					pMinecraft->stats[i]->parse(pData);
+				// clear the stats first - there could have beena signout and sign back in in the menus
+				// need to clear the player stats - can't assume it'll be done in setlevel - we may not be in the game
+				pMinecraft->stats[ i ]->clear();
+				pMinecraft->stats[i]->parse(pData);
 				}
 			}
 
@@ -1677,7 +1698,7 @@ void StartGame(bool servermode, bool nCmdShow) {
 			CSocialManager::Instance()->RefreshPostingCapability();
 
 			// clear the flag
-			app.uiGameDefinedDataChangedBitmask = 0;
+			app.uiGameDefinedDataChangedBitmask=0;
 
 			// Check if any profile write are needed
 			app.CheckGameSettingsChanged();
@@ -1686,11 +1707,11 @@ void StartGame(bool servermode, bool nCmdShow) {
 		app.TickDLCOffersRetrieved();
 		app.TickTMSPPFilesRetrieved();
 
-		PIXBeginNamedEvent(0, "Network manager do work #2");
+		PIXBeginNamedEvent(0,"Network manager do work #2");
 		g_NetworkManager.DoWork();
 		PIXEndNamedEvent();
 
-		PIXBeginNamedEvent(0, "Misc extra xui");
+		PIXBeginNamedEvent(0,"Misc extra xui");
 		// Update XUI Timers
 		hr = XuiTimersRun();
 
@@ -1703,13 +1724,13 @@ void StartGame(bool servermode, bool nCmdShow) {
 #endif
 
 		// 4J-PB - Update the trial timer display if we are in the trial version
-		if (!ProfileManager.IsFullVersion())
+		if(!ProfileManager.IsFullVersion())
 		{
 			// display the trial timer
-			if (app.GetGameStarted())
+			if(app.GetGameStarted())
 			{
 				// 4J-PB - if the game is paused, add the elapsed time to the trial timer count so it doesn't tick down
-				if (app.IsAppPaused())
+				if(app.IsAppPaused())
 				{
 					app.UpdateTrialPausedTimer();
 				}
@@ -1719,10 +1740,10 @@ void StartGame(bool servermode, bool nCmdShow) {
 		else
 		{
 			// need to turn off the trial timer if it was on , and we've unlocked the full version
-			if (bTrialTimerDisplayed)
+			if(bTrialTimerDisplayed)
 			{
 				ui.ShowTrialTimer(false);
-				bTrialTimerDisplayed = false;
+				bTrialTimerDisplayed=false;
 			}
 		}
 
