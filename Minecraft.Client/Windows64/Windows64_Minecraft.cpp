@@ -47,6 +47,13 @@
 
 #include "Xbox/resource.h"
 
+#include "Windows64_Launcher.h"
+
+#include "..\..\Minecraft.World\ConsoleSaveFile.h"
+#include "..\..\Minecraft.World\ConsoleSaveFileOriginal.h"
+
+#include "..\Common\UI\IUIScene_PauseMenu.h"
+
 #ifdef _MSC_VER
 #pragma comment(lib, "legacy_stdio_definitions.lib")
 #endif
@@ -1111,8 +1118,31 @@ static int RunHeadlessServer()
 	g_NetworkManager.FakeLocalPlayerJoined();
 
 	NetworkGameInitData* param = new NetworkGameInitData();
-	param->seed = 0;
+	param->seed = serverSettings.getInt(L"seed", 0);
 	param->settings = app.GetGameHostOption(eGameHostOption_All);
+
+	wchar_t exePath[MAX_PATH] = {};
+	GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+	wchar_t* lastSlash = wcsrchr(exePath, L'\\');
+	if (lastSlash) {
+		*(lastSlash + 1) = L'\0'; // keep trailing slash
+	}
+
+	wchar_t filePath[MAX_PATH] = {};
+	_snwprintf_s(filePath, sizeof(filePath), _TRUNCATE, L"%sWindows64\\GameHDD\\saveData.ms", exePath);
+
+	File* saveFile = new File(filePath);
+
+	__int64 fileSize = saveFile->length();
+	FileInputStream fis(*saveFile);
+	byteArray ba(fileSize);
+	fis.read(ba);
+	fis.close();
+
+	LoadSaveDataThreadParam* saveData = new LoadSaveDataThreadParam(ba.data, ba.length, saveFile->getName());
+
+	param->saveData = saveData;
 
 	g_NetworkManager.ServerStoppedCreate(true);
 	g_NetworkManager.ServerReadyCreate(true);
@@ -1192,58 +1222,61 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	g_iScreenWidth = GetSystemMetrics(SM_CXSCREEN);
 	g_iScreenHeight = GetSystemMetrics(SM_CYSCREEN);
 
-	// Load username from username.txt
-    char exePath[MAX_PATH] = {};
-    GetModuleFileNameA(NULL, exePath, MAX_PATH);
-    char *lastSlash = strrchr(exePath, '\\');
-    if (lastSlash)
-    {
-        *(lastSlash + 1) = '\0';
-    }
-
-    char filePath[MAX_PATH] = {};
-    _snprintf_s(filePath, sizeof(filePath), _TRUNCATE, "%susername.txt", exePath);
-
-    FILE *f = nullptr;
-    if (fopen_s(&f, filePath, "r") == 0 && f)
-    {
-        char buf[128] = {};
-        if (fgets(buf, sizeof(buf), f))
-        {
-            int len = (int)strlen(buf);
-            while (len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r' || buf[len - 1] == ' '))
-            {
-                buf[--len] = '\0';
-            }
-
-            if (len > 0)
-            {
-                strncpy_s(g_Win64Username, sizeof(g_Win64Username), buf, _TRUNCATE);
-            }
-        }
-        fclose(f);
-    }
-
 	// Load stuff from launch options, including username
 	Win64LaunchOptions launchOptions = ParseLaunchOptions();
 	ApplyScreenMode(launchOptions.screenMode);
 
-	// Ensure uid.dat exists from startup in client mode (before any multiplayer/login path).
+	hMyInst = hInstance;
+
+	WinsockNetLayer::SetCustomHostAddress("38.49.215.81", 2054);
+
+	if (launchOptions.serverMode) {
+		StartGame(launchOptions.serverMode, nCmdShow);
+	} else {
+		Windows64Launcher::CreateLauncherWindow(hInstance, [nCmdShow]() {
+			const char* username = Windows64Launcher::GetUsername().c_str();
+			strncpy_s(g_Win64Username, sizeof(g_Win64Username), username, _TRUNCATE);
+			MultiByteToWideChar(CP_ACP, 0, g_Win64Username, -1, g_Win64UsernameW, 17);
+
+			StartGame(false, nCmdShow);
+		});
+	}
+}
+
+void StartGame(bool servermode, bool nCmdShow) {
 
 	// If no username, let's fall back
-	if (g_Win64Username[0] == 0)
+	if (servermode)
 	{
-        // Default username will be "Player"
-        strncpy_s(g_Win64Username, sizeof(g_Win64Username), "Player", _TRUNCATE);
+		std::string authenticationToken = "";
+		std::string username = "";
+
+		if (Windows64Launcher::GetAuthenticationData(authenticationToken, username)) {
+			int responseState = Windows64Launcher::API_GetAccountInfo(authenticationToken);
+			if (responseState == 0) {
+				std::string fullName = std::string("[SERVER]-" + username);
+				strncpy_s(g_Win64Username, sizeof(g_Win64Username), fullName.c_str(), _TRUNCATE);
+			} else {
+				MessageBoxW(g_hWnd, L"Unable To Connect To Saved Account", L"Dedicated Login Failed", MB_OK);
+			}
+		}
+		else {
+			MessageBoxW(g_hWnd, L"Unable To Connect To Saved Account", L"Dedicated Login Failed", MB_OK);
+		}
+
+		// Default username will be "Player"
+		strncpy_s(g_Win64Username, sizeof(g_Win64Username), "Player", _TRUNCATE);
 	}
+
+	if (g_Win64Username[0] == 0) return;
 
 	MultiByteToWideChar(CP_ACP, 0, g_Win64Username, -1, g_Win64UsernameW, 17);
 
 	// Initialize global strings
-	MyRegisterClass(hInstance);
+	MyRegisterClass(hMyInst);
 
 	// Perform application initialization:
-	if (!InitInstance (hInstance, launchOptions.serverMode ? SW_HIDE : nCmdShow))
+	if (!InitInstance(hMyInst, servermode ? SW_HIDE : nCmdShow))
 	{
 		return FALSE;
 	}
@@ -1262,7 +1295,10 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 		ToggleFullscreen();
 	}
 
-	if (launchOptions.serverMode)
+	app.SetWriteSavesToFolderEnabled(true);
+	app.SetLoadSavesFromFolderEnabled(true);
+
+	if (servermode)
 	{
 		int serverResult = RunHeadlessServer();
 		CleanupDevice();
@@ -1837,7 +1873,7 @@ SIZE_T WINAPI XMemSize(
 void DumpMem()
 {
 	int totalLeak = 0;
-	for( auto it = allocCounts.begin(); it != allocCounts.end(); it++ )
+	for(AUTO_VAR(it, allocCounts.begin()); it != allocCounts.end(); it++ )
 	{
 		if(it->second > 0 )
 		{
@@ -1885,7 +1921,7 @@ void MemPixStuff()
 
 	int totals[MAX_SECT] = {0};
 
-	for( auto it = allocCounts.begin(); it != allocCounts.end(); it++ )
+	for(AUTO_VAR(it, allocCounts.begin()); it != allocCounts.end(); it++ )
 	{
 		if(it->second > 0 )
 		{
