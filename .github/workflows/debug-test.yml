@@ -1,20 +1,7 @@
 name: MSBuild Debug Test
 
 on:
-  workflow_dispatch: 
-  pull_request:
-    types: [opened, reopened, synchronize]
-    paths-ignore:
-      - '.gitignore'
-      - '*.md'
-      - '.github/*.md'
-  push:
-    branches:
-    - 'main'
-    paths-ignore:
-      - '.gitignore'
-      - '*.md'
-      - '.github/*.md'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -23,7 +10,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@v4
 
     - name: Setup msbuild
       uses: microsoft/setup-msbuild@v2
