@@ -87,7 +87,7 @@ void ConsoleSchematicFile::load(DataInputStream *dis)
 		}
 		else
 		{
-			unsigned int outputSize = m_xSize * m_ySize * m_zSize * 3/2;
+			unsigned int outputSize = m_xSize * m_ySize * m_zSize * 2;
 			m_data = byteArray(outputSize);
 
 			switch(compressionType)

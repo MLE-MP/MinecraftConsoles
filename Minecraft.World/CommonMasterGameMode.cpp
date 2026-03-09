@@ -10,6 +10,8 @@
 #include "..\Minecraft.Client\Common\GameRules\CheckpointRuleDefinition.h"
 #include "..\Minecraft.Client\Common\GameRules\TargetAreaRuleDefinition.h"
 #include "..\Minecraft.Client\Common\GameRules\PowerupRuleDefinition.h"
+#include "..\Minecraft.Client\Minecraft.h"
+#include "..\Minecraft.Client\MinecraftServer.h"
 
 static const MiniGameDef *s_currentMiniGame = NULL;
 
@@ -186,6 +188,10 @@ const AABB *CommonMasterGameMode::GetTeamArea(Team *team) const
 void CommonMasterGameMode::SetupMiniGameInstance(const MiniGameDef &def, int param)
 {
 	s_currentMiniGame = &def;
+	Minecraft::GetInstance()->SetupMiniGameInstance(const_cast<MiniGameDef &>(def), 0);
+	MinecraftServer *server = MinecraftServer::getInstance();
+	if(server)
+		server->setPvpAllowed(def.AllowPvp());
 }
 
 void CommonMasterGameMode::clearBuildOffVotes()

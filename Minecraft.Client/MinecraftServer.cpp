@@ -8,6 +8,10 @@
 #include "DispenserBootstrap.h"
 #include "EntityTracker.h"
 #include "MinecraftServer.h"
+#include "Minecraft.h"
+#include "..\Minecraft.World\MasterGameMode.h"
+#include "..\Minecraft.World\MiniGameDef.h"
+#include "..\Minecraft.World\EMiniGameId.h"
 #include "Options.h"
 #include "PlayerList.h"
 #include "ServerChunkCache.h"
@@ -750,6 +754,19 @@ bool MinecraftServer::initServer(__int64 seed, NetworkGameInitData *initData, DW
 	m_bLoaded = loadLevel(new McRegionLevelStorageSource(File(L".")), levelName, seed, pLevelType, initData);
 	//        logger.info("Done (" + (System.nanoTime() - levelNanoTime) + "ns)! For help, type \"help\" or \"?\"");
 
+	if(m_bLoaded)
+	{
+		Minecraft *mc = Minecraft::GetInstance();
+		if(mc && mc->m_lobbyGameMode && mc->m_lobbyGameMode->GetId() != MINIGAME_NORMAL_WORLD)
+		{
+			mc->m_masterGameMode = new MasterGameMode();
+			const MiniGameDef &def = MiniGameDef::GetCustomGameModeById(mc->m_lobbyGameMode->GetId(), true);
+			mc->m_masterGameMode->Setup(mc->m_lobbyGameMode->GetId());
+			mc->m_masterGameMode->SetupMiniGameInstance(def, 0);
+			app.DebugPrintf("MasterGameMode: Created for minigame %d\n", mc->m_lobbyGameMode->GetId());
+		}
+	}
+
 	// 4J delete passed in save data now - this is only required for the tutorial which is loaded by passing data directly in rather than using the storage manager
 	if( initData->saveData )
 	{
@@ -889,9 +906,11 @@ bool MinecraftServer::loadLevel(LevelStorageSource *storageSource, const wstring
 	// 4J - temp - load existing level
 	shared_ptr<McRegionLevelStorage> storage = nullptr;
 	bool levelChunksNeedConverted = false;
+	app.DebugPrintf("loadLevel: saveData=%p savePlatform=0x%08X\n", initData ? (void*)initData->saveData : nullptr, initData ? (unsigned int)initData->savePlatform : 0);
 	if( initData->saveData != NULL )
 	{
 		// We are loading a file from disk with the data passed in
+		app.DebugPrintf("loadLevel: TAKING saveData branch (saveData != NULL)\n");
 
 #ifdef SPLIT_SAVES		
 		ConsoleSaveFileOriginal oldFormatSave( initData->saveData->saveName, initData->saveData->data, initData->saveData->fileSize, false, initData->savePlatform );
@@ -920,9 +939,10 @@ bool MinecraftServer::loadLevel(LevelStorageSource *storageSource, const wstring
 			if(pvSaveData && fileSize != 0) bLevelGenBaseSave = true;
 		}
 		ConsoleSaveFileSplit *newFormatSave = NULL;
+		app.DebugPrintf("loadLevel: bLevelGenBaseSave=%d savePlatform=0x%08X\n", (int)bLevelGenBaseSave, initData ? (unsigned int)initData->savePlatform : 0);
 		if(bLevelGenBaseSave)
 		{
-			ConsoleSaveFileOriginal oldFormatSave( L"" );
+			ConsoleSaveFileOriginal oldFormatSave( L"", NULL, 0, false, initData->savePlatform );
 			newFormatSave = new ConsoleSaveFileSplit( &oldFormatSave );
 		}
 		else
@@ -932,7 +952,7 @@ bool MinecraftServer::loadLevel(LevelStorageSource *storageSource, const wstring
 
 		storage = shared_ptr<McRegionLevelStorage>(new McRegionLevelStorage(newFormatSave, File(L"."), name, true));
 #else
-		storage = shared_ptr<McRegionLevelStorage>(new McRegionLevelStorage(new ConsoleSaveFileOriginal( L"" ), File(L"."), name, true));
+		storage = shared_ptr<McRegionLevelStorage>(new McRegionLevelStorage(new ConsoleSaveFileOriginal( L"", NULL, 0, false, initData->savePlatform ), File(L"."), name, true));
 #endif
 	}
 
@@ -2161,6 +2181,10 @@ void MinecraftServer::tick()
 		}
 	}
 	Entity::tickExtraWandering();	// 4J added
+
+	Minecraft *mc = Minecraft::GetInstance();
+	if(mc && mc->m_masterGameMode)
+		mc->m_masterGameMode->Tick();
 
 	PIXBeginNamedEvent(0,"Connection tick");
 	connection->tick();

@@ -32,7 +32,12 @@ LevelData::LevelData(CompoundTag *tag)
 			m_pGenerator = m_pGenerator->getReplacementForVersion(generatorVersion);
 		}
 
-		if (tag->contains(L"generatorOptions")) generatorOptions = tag->getString(L"generatorOptions");
+		if (tag->contains(L"generatorOptions"))
+		{
+			Tag* optTag = tag->get(L"generatorOptions");
+			if (optTag != NULL && optTag->getId() == Tag::TAG_String)
+				generatorOptions = tag->getString(L"generatorOptions");
+		}
 	}
 
 	gameType = GameType::byId(tag->getInt(L"GameType"));

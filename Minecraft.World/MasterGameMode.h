@@ -4,6 +4,8 @@
 
 class BlockDegradeRoutine;
 class GameStats;
+class ServerPlayer;
+class GameType;
 
 class MasterGameMode : public CommonMasterGameMode
 {
@@ -25,8 +27,26 @@ public:
 		void (*m_onTimerFunc1)(MasterGameMode *, void *);
 	};
 
-	enum EInternalGameModeState {};
+	enum EInternalGameModeState
+	{
+		STATE_INIT           = 0,
+		STATE_LOBBY_WAIT     = 1,
+		STATE_MAP_SELECT     = 2,
+		STATE_LOADING        = 3,
+		STATE_PRE_ROUND      = 4,
+		STATE_IN_ROUND_A     = 5,
+		STATE_IN_ROUND_B     = 6,
+		STATE_POST_ROUND     = 7,
+		STATE_ROUND_RESULTS  = 8,
+		STATE_TRANSITION_A   = 9,
+		STATE_INTER_ROUND    = 10,
+		STATE_FINAL_RESULTS  = 11,
+		STATE_TRANSITION_B   = 12,
+		STATE_GAME_OVER      = 13,
+		STATE_SHUTDOWN       = 14
+	};
 
+	MasterGameMode();
 	~MasterGameMode();
 	void Tick();
 	long long RestartMapGenerator();
@@ -51,6 +71,7 @@ public:
 	int ChooseItemSet(const MiniGameDef &def, bool useRandom);
 	void SetupTeams();
 	void GeneratePlaylistSyncInfo();
+	void SetAllPlayersGameType(GameType *type);
 
 	static void StaticCtor();
 	static void OnGameStart(MasterGameMode *_this, void *data);
@@ -58,7 +79,11 @@ public:
 	static void OnGracePeriodEnd(MasterGameMode *_this, void *data);
 
 	GameStats *GetGameStats() { return m_gameStats; }
+	EInternalGameModeState GetState() const { return m_state; }
 
+	EInternalGameModeState m_state;
+	int m_tickCounter;
+	int m_roundNumber;
 	bool m_playersInvulnerable;
 	BlockDegradeRoutine *m_degradeRoutine;
 	GameStats *m_gameStats;

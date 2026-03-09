@@ -145,7 +145,11 @@ ConsoleSaveFileOriginal::ConsoleSaveFileOriginal(const wstring &fileName, LPVOID
 			if( compressed == 0 )
 			{
 				unsigned int decompSize = *( (int*)pvSourceData+1 );
+				app.DebugPrintf("CSF: plat=0x%08X localEndian=%d remoteEndian=%d isDiff=%d decompSizeBefore=%u (0x%08X)\n",
+					(unsigned int)plat, (int)getLocalEndian(), (int)header.getEndian(plat),
+					(int)isLocalEndianDifferent(plat), decompSize, decompSize);
 				if(isLocalEndianDifferent(plat)) System::ReverseULONG(&decompSize);
+				app.DebugPrintf("CSF: decompSizeAfter=%u (0x%08X)\n", decompSize, decompSize);
 
 				// An invalid save, so clear the memory and start from scratch
 				if(decompSize == 0)

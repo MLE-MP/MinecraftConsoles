@@ -184,14 +184,16 @@ void GameRuleManager::loadGameRules(DLCPack *pack)
 		byte *dData = dlcFile->getData(dSize);
 
 		LevelGenerationOptions *createdLevelGenerationOptions = new LevelGenerationOptions(pack);
-		//	= loadGameRules(dData, dSize); //, strings);
-		
-		createdLevelGenerationOptions->setGrSource( new JustGrSource() );
-		createdLevelGenerationOptions->setSrc( LevelGenerationOptions::eSrc_tutorial );
+
+		DLCGameRulesHeader *syntheticHeader = (DLCGameRulesHeader *)pack->addFile(
+			DLCManager::e_DLCType_GameRulesHeader, dlcFile->getPath());
+
+		createdLevelGenerationOptions->setGrSource( syntheticHeader );
+		createdLevelGenerationOptions->setSrc( LevelGenerationOptions::eSrc_fromDLC );
 
 		readRuleFile(createdLevelGenerationOptions, dData, dSize, strings);
 
-		createdLevelGenerationOptions->setLoadedData();
+		syntheticHeader->lgo = createdLevelGenerationOptions;
 	}
 }
 
@@ -458,6 +460,9 @@ bool GameRuleManager::readRuleFile(LevelGenerationOptions *lgo, byte *dIn, UINT 
 		for(int i = 0; i < 8; ++i) dis.readBoolean();
 	}
 
+	app.DebugPrintf("[GRF] readRuleFile: version=%lld, compressionType=%d, dataSize=%u\n", version, (int)compressionType, dSize);
+	MC_LOG("[GRF] readRuleFile: version=%lld, compressionType=%d, dataSize=%u", version, (int)compressionType, dSize);
+
 	ByteArrayInputStream *contentBais = NULL;
 	DataInputStream *contentDis = NULL;
 
@@ -472,8 +477,16 @@ bool GameRuleManager::readRuleFile(LevelGenerationOptions *lgo, byte *dIn, UINT 
 	{
 		unsigned int uncompressedSize = dis.readInt();
 		unsigned int compressedSize = dis.readInt();
+		app.DebugPrintf("[GRF] readRuleFile: uncompressedSize=%u, compressedSize=%u\n", uncompressedSize, compressedSize);
+		MC_LOG("[GRF] readRuleFile: uncompressedSize=%u, compressedSize=%u", uncompressedSize, compressedSize);
 		byteArray compressedBuffer(compressedSize);
 		dis.read(compressedBuffer);
+		MC_LOG("[GRF] readRuleFile: read %u compressed bytes, first 8 bytes: %02X %02X %02X %02X %02X %02X %02X %02X",
+			compressedSize,
+			compressedSize > 0 ? compressedBuffer.data[0] : 0, compressedSize > 1 ? compressedBuffer.data[1] : 0,
+			compressedSize > 2 ? compressedBuffer.data[2] : 0, compressedSize > 3 ? compressedBuffer.data[3] : 0,
+			compressedSize > 4 ? compressedBuffer.data[4] : 0, compressedSize > 5 ? compressedBuffer.data[5] : 0,
+			compressedSize > 6 ? compressedBuffer.data[6] : 0, compressedSize > 7 ? compressedBuffer.data[7] : 0);
 
 		byteArray decompressedBuffer = byteArray(uncompressedSize);
 
@@ -489,12 +502,14 @@ bool GameRuleManager::readRuleFile(LevelGenerationOptions *lgo, byte *dIn, UINT 
 			break;
 
 		default:
-			app.DebugPrintf("De-compressing game rules.");
-#ifndef _CONTENT_PACKAGE
-			assert( compressionType == APPROPRIATE_COMPRESSION_TYPE );
-#endif
-			// 4J-JEV: DecompressLZXRLE uses the correct platform specific compression type. (need to assert that the data is compressed with it though).
+			MC_LOG("[GRF] De-compressing game rules with type %d (LZXRLE path)", (int)compressionType);
+			MC_LOG("[GRF] SetDecompressionType(%d)", (int)compressionType);
+			Compression::getCompression()->SetDecompressionType((Compression::ECompressionTypes)compressionType);
+			MC_LOG("[GRF] Calling DecompressLZXRLE: dstLen=%u srcLen=%u", decompressedBuffer.length, compressedSize);
 			Compression::getCompression()->DecompressLZXRLE(decompressedBuffer.data, &decompressedBuffer.length, compressedBuffer.data, compressedSize);
+			MC_LOG("[GRF] DecompressLZXRLE returned. decompressedLen=%u", decompressedBuffer.length);
+			Compression::getCompression()->SetDecompressionType(APPROPRIATE_COMPRESSION_TYPE);
+			MC_LOG("[GRF] SetDecompressionType back to local (%d)", (int)APPROPRIATE_COMPRESSION_TYPE);
 			break;
 /* 4J-JEV:
 	Each platform has only 1 method of compression, 'compression.h' file deals with it.

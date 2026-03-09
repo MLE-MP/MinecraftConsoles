@@ -120,7 +120,6 @@ void StringTable::ProcessStringTableData(void)
 	{
 		app.DebugPrintf("Failed to get language\n");
 #ifdef _DEBUG
-		__debugbreak();
 #endif
 
 		isStatic = false;

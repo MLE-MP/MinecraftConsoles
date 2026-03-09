@@ -369,6 +369,35 @@ DWORD XUserAreUsersFriends(DWORD dwUserIndex, PPlayerUID pXuids, DWORD dwXuidCou
 
 #if defined __ORBIS__ || defined __PS3__ || defined _XBOX_ONE
 #else
+
+typedef HRESULT (WINAPI *PFN_XMemDecompress)(VOID*, VOID*, SIZE_T*, CONST VOID*, SIZE_T);
+typedef HRESULT (WINAPI *PFN_XMemCompress)(VOID*, VOID*, SIZE_T*, CONST VOID*, SIZE_T);
+typedef HRESULT (WINAPI *PFN_XMemCreateCompressionContext)(DWORD, CONST VOID*, DWORD, VOID**);
+typedef HRESULT (WINAPI *PFN_XMemCreateDecompressionContext)(DWORD, CONST VOID*, DWORD, VOID**);
+typedef void (WINAPI *PFN_XMemDestroyContext)(VOID*);
+
+static HMODULE s_hXCompress = NULL;
+static PFN_XMemDecompress s_pfnDecompress = NULL;
+static PFN_XMemCompress s_pfnCompress = NULL;
+static PFN_XMemCreateCompressionContext s_pfnCreateCompCtx = NULL;
+static PFN_XMemCreateDecompressionContext s_pfnCreateDecompCtx = NULL;
+static PFN_XMemDestroyContext s_pfnDestroyCompCtx = NULL;
+static PFN_XMemDestroyContext s_pfnDestroyDecompCtx = NULL;
+
+static bool LoadXCompress()
+{
+	if (s_hXCompress) return true;
+	s_hXCompress = LoadLibraryA("xcompress.dll");
+	if (!s_hXCompress) return false;
+	s_pfnDecompress = (PFN_XMemDecompress)GetProcAddress(s_hXCompress, "XMemDecompress");
+	s_pfnCompress = (PFN_XMemCompress)GetProcAddress(s_hXCompress, "XMemCompress");
+	s_pfnCreateCompCtx = (PFN_XMemCreateCompressionContext)GetProcAddress(s_hXCompress, "XMemCreateCompressionContext");
+	s_pfnCreateDecompCtx = (PFN_XMemCreateDecompressionContext)GetProcAddress(s_hXCompress, "XMemCreateDecompressionContext");
+	s_pfnDestroyCompCtx = (PFN_XMemDestroyContext)GetProcAddress(s_hXCompress, "XMemDestroyCompressionContext");
+	s_pfnDestroyDecompCtx = (PFN_XMemDestroyContext)GetProcAddress(s_hXCompress, "XMemDestroyDecompressionContext");
+	return s_pfnDecompress && s_pfnCompress && s_pfnCreateCompCtx && s_pfnCreateDecompCtx;
+}
+
 HRESULT XMemDecompress(
 	XMEMDECOMPRESSION_CONTEXT Context,
 	VOID * pDestination,
@@ -377,27 +406,9 @@ HRESULT XMemDecompress(
 	SIZE_T SrcSize
 )
 {
-	memcpy(pDestination, pSource, SrcSize);
-	*pDestSize = SrcSize;
-	return S_OK;
-
-	/*
-	DECOMPRESSOR_HANDLE Decompressor    = (DECOMPRESSOR_HANDLE)Context;
-	if( Decompress(
-		Decompressor,           //  Decompressor handle
-		(void *)pSource,		//  Compressed data
-		SrcSize,				//  Compressed data size
-		pDestination,			//  Decompressed buffer
-		*pDestSize,				//  Decompressed buffer size
-		pDestSize) )				//  Decompressed data size
-	{
-		return S_OK;
-	}
-	else
-	*/
-	{
-		return E_FAIL;
-	}
+	if (LoadXCompress() && s_pfnDecompress)
+		return s_pfnDecompress(Context, pDestination, pDestSize, pSource, SrcSize);
+	return E_FAIL;
 }
 
 HRESULT XMemCompress(
@@ -408,27 +419,9 @@ HRESULT XMemCompress(
 	SIZE_T SrcSize
 )
 {
-	memcpy(pDestination, pSource, SrcSize);
-	*pDestSize = SrcSize;
-	return S_OK;
-
-	/*
-	COMPRESSOR_HANDLE Compressor    = (COMPRESSOR_HANDLE)Context;
-	if( Compress(
-			Compressor,                  //  Compressor Handle
-			(void *)pSource,             //  Input buffer, Uncompressed data
-			SrcSize,					 //  Uncompressed data size
-			pDestination,                //  Compressed Buffer
-			*pDestSize,                  //  Compressed Buffer size
-			pDestSize)	)				//  Compressed Data size
-	{
-		return S_OK;
-	}
-	else
-	*/
-	{
-		return E_FAIL;
-	}
+	if (LoadXCompress() && s_pfnCompress)
+		return s_pfnCompress(Context, pDestination, pDestSize, pSource, SrcSize);
+	return E_FAIL;
 }
 
 HRESULT XMemCreateCompressionContext(
@@ -438,18 +431,10 @@ HRESULT XMemCreateCompressionContext(
 	XMEMCOMPRESSION_CONTEXT * pContext
 )
 {
-	/*
-	COMPRESSOR_HANDLE Compressor    = NULL;
-
-	HRESULT hr = CreateCompressor(
-		COMPRESS_ALGORITHM_XPRESS_HUFF, //  Compression Algorithm
-		NULL,                           //  Optional allocation routine
-		&Compressor);                   //  Handle
-
-	pContext = (XMEMDECOMPRESSION_CONTEXT *)Compressor;
-	return hr;
-	*/
-	return 0;
+	if (LoadXCompress() && s_pfnCreateCompCtx)
+		return s_pfnCreateCompCtx(CodecType, pCodecParams, Flags, pContext);
+	*pContext = NULL;
+	return E_FAIL;
 }
 
 HRESULT XMemCreateDecompressionContext(
@@ -459,30 +444,22 @@ HRESULT XMemCreateDecompressionContext(
 	XMEMDECOMPRESSION_CONTEXT * pContext
 )
 {
-	/*
-	DECOMPRESSOR_HANDLE  Decompressor    = NULL;
-
-	HRESULT hr = CreateDecompressor(
-		COMPRESS_ALGORITHM_XPRESS_HUFF, //  Compression Algorithm
-		NULL,                           //  Optional allocation routine
-		&Decompressor);                   //  Handle
-
-	pContext = (XMEMDECOMPRESSION_CONTEXT *)Decompressor;
-	return hr;
-	*/
-	return 0;
+	if (LoadXCompress() && s_pfnCreateDecompCtx)
+		return s_pfnCreateDecompCtx(CodecType, pCodecParams, Flags, pContext);
+	*pContext = NULL;
+	return E_FAIL;
 }
 
 void XMemDestroyCompressionContext(XMEMCOMPRESSION_CONTEXT Context)
 {
-	//	COMPRESSOR_HANDLE Compressor    = (COMPRESSOR_HANDLE)Context;
-	//	CloseCompressor(Compressor);
+	if (LoadXCompress() && s_pfnDestroyCompCtx)
+		s_pfnDestroyCompCtx(Context);
 }
 
 void XMemDestroyDecompressionContext(XMEMDECOMPRESSION_CONTEXT Context)
 {
-	//	DECOMPRESSOR_HANDLE Decompressor    = (DECOMPRESSOR_HANDLE)Context;
-	//	CloseDecompressor(Decompressor);
+	if (LoadXCompress() && s_pfnDestroyDecompCtx)
+		s_pfnDestroyDecompCtx(Context);
 }
 #endif
 

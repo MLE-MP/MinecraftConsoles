@@ -2937,6 +2937,12 @@
     <ClInclude Include="CompoundContainer.h" />
     <ClInclude Include="CompoundTag.h" />
     <ClInclude Include="compression.h" />
+    <ClInclude Include="lzxmain.h" />
+    <ClInclude Include="mspack\lzx.h" />
+    <ClInclude Include="mspack\mspack.h" />
+    <ClInclude Include="mspack\readbits.h" />
+    <ClInclude Include="mspack\readhuff.h" />
+    <ClInclude Include="mspack\system.h" />
     <ClInclude Include="Connection.h" />
     <ClInclude Include="Container.h" />
     <ClInclude Include="ContainerAckPacket.h" />
@@ -3636,6 +3642,10 @@
       <OptimizationLevel Condition="'$(Configuration)|$(Platform)'=='Debug|PS3'">Level0</OptimizationLevel>
     </ClCompile>
     <ClCompile Include="compression.cpp" />
+    <ClCompile Include="mspack\lzxd.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <CompileAs>CompileAsC</CompileAs>
+    </ClCompile>
     <ClCompile Include="Connection.cpp" />
     <ClCompile Include="ConsoleSaveFileConverter.cpp" />
     <ClCompile Include="ConsoleSaveFileOriginal.cpp" />
@@ -4087,6 +4097,9 @@
     <ClCompile Include="LevelSettings.cpp" />
     <ClCompile Include="CommonMasterGameMode.cpp" />
     <ClCompile Include="MasterGameMode.cpp" />
+    <ClCompile Include="GameStats.cpp" />
+    <ClCompile Include="BlockDegradeRoutine.cpp" />
+    <ClCompile Include="Voteables.cpp" />
     <ClCompile Include="MiniGameDef.cpp" />
     <ClCompile Include="MiniGameMedals.cpp" />
     <ClCompile Include="MapGenerator.cpp" />

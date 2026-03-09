@@ -134,8 +134,10 @@ void MerchantRecipe::load(CompoundTag *tag)
 CompoundTag *MerchantRecipe::createTag()
 {
 	CompoundTag *tag = new CompoundTag();
-	tag->putCompound(L"buy", buyA->save(new CompoundTag(L"buy")));
-	tag->putCompound(L"sell", sell->save(new CompoundTag(L"sell")));
+	if (buyA != NULL)
+		tag->putCompound(L"buy", buyA->save(new CompoundTag(L"buy")));
+	if (sell != NULL)
+		tag->putCompound(L"sell", sell->save(new CompoundTag(L"sell")));
 	if (buyB != NULL)
 	{
 		tag->putCompound(L"buyB", buyB->save(new CompoundTag(L"buyB")));

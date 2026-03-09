@@ -8,35 +8,24 @@ class UIScene_MiniGameSelectMenu : public UIScene
 private:
 	enum EControls
 	{
-		eControl_Battle,
-		eControl_Tumble,
-		eControl_Glide,
-		eControl_CreateJoinToggle,
-		eControl_Count,
+		eControl_GameList,
 	};
 
-	enum EMode
-	{
-		eMode_Create,
-		eMode_Join,
-	};
-
-	UIControl_Button m_buttons[eControl_Count];
-	UIControl_Button m_hiddenButtons[2];
-	UIControl m_controlTimer;
+	UIControl_SaveList m_gameList;
+	UIControl_SaveList m_joinList;
+	UIControl_Label m_labelSavesListTitle, m_labelJoinListTitle, m_labelNoGames;
+	UIControl m_controlSavesTimer, m_controlJoinTimer;
 
 	UI_BEGIN_MAP_ELEMENTS_AND_NAMES(UIScene)
-		UI_MAP_ELEMENT(m_buttons[(int)eControl_Battle], "Button1")
-		UI_MAP_ELEMENT(m_buttons[(int)eControl_Tumble], "Button2")
-		UI_MAP_ELEMENT(m_buttons[(int)eControl_Glide], "Button3")
-		UI_MAP_ELEMENT(m_buttons[(int)eControl_CreateJoinToggle], "Button4")
-		UI_MAP_ELEMENT(m_hiddenButtons[0], "Button5")
-		UI_MAP_ELEMENT(m_hiddenButtons[1], "Button6")
-		UI_MAP_ELEMENT(m_controlTimer, "Timer")
+		UI_MAP_ELEMENT(m_gameList, "SavesList")
+		UI_MAP_ELEMENT(m_joinList, "JoinList")
+		UI_MAP_ELEMENT(m_labelSavesListTitle, "SavesListTitle")
+		UI_MAP_ELEMENT(m_labelJoinListTitle, "JoinListTitle")
+		UI_MAP_ELEMENT(m_labelNoGames, "NoGames")
+		UI_MAP_ELEMENT(m_controlSavesTimer, "SavesTimer")
+		UI_MAP_ELEMENT(m_controlJoinTimer, "JoinTimer")
 	UI_END_MAP_ELEMENTS_AND_NAMES()
 
-	EMode m_mode;
-	int m_selectedMiniGame;
 	bool m_bIgnorePress;
 
 public:
@@ -46,7 +35,6 @@ public:
 	virtual EUIScene getSceneType() { return eUIScene_MiniGameSelectMenu; }
 	virtual wstring getMoviePath();
 	virtual void updateTooltips();
-	virtual void handleReload();
 
 	virtual void handleInput(int iPad, int key, bool repeat, bool pressed, bool released, bool &handled);
 
@@ -55,7 +43,5 @@ protected:
 	void handleGainFocus(bool navBack);
 
 private:
-	void UpdateModeLabel();
 	void LaunchMiniGame(EMiniGameId miniGameId);
-	void JoinMiniGame();
 };

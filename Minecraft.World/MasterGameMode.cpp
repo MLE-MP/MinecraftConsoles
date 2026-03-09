@@ -2,6 +2,7 @@
 #include "MasterGameMode.h"
 #include "MiniGameDef.h"
 #include "EMiniGameId.h"
+#include "LevelSettings.h"
 #include "..\Minecraft.Client\Common\GameRules\LevelRuleset.h"
 #include "..\Minecraft.Client\Common\GameRules\CheckpointRuleDefinition.h"
 #include "..\Minecraft.Client\Common\GameRules\TargetAreaRuleDefinition.h"
@@ -10,6 +11,11 @@
 #include "GameStats.h"
 #include "..\Minecraft.Client\Common\GameRules\DegradationSequenceRuleDefinition.h"
 #include "..\Minecraft.Client\Common\GameRules\ConsoleGameRulesConstants.h"
+#include "..\Minecraft.Client\Minecraft.h"
+#include "..\Minecraft.Client\MinecraftServer.h"
+#include "..\Minecraft.Client\PlayerList.h"
+#include "..\Minecraft.Client\ServerPlayer.h"
+#include "..\Minecraft.Client\ServerPlayerGameMode.h"
 
 MasterGameMode::CountdownInfo::CountdownInfo()
 {
@@ -22,6 +28,16 @@ void MasterGameMode::StaticCtor()
 {
 }
 
+MasterGameMode::MasterGameMode()
+{
+	m_state = STATE_INIT;
+	m_tickCounter = 0;
+	m_roundNumber = 0;
+	m_playersInvulnerable = true;
+	m_degradeRoutine = NULL;
+	m_gameStats = new GameStats();
+}
+
 MasterGameMode::~MasterGameMode()
 {
 	delete m_degradeRoutine;
@@ -31,6 +47,64 @@ MasterGameMode::~MasterGameMode()
 void MasterGameMode::Tick()
 {
 	CommonMasterGameMode::Tick();
+
+	const MiniGameDef *miniGame = GetMiniGame();
+	if(!miniGame || miniGame->GetId() == MINIGAME_NORMAL_WORLD)
+		return;
+
+	switch(m_state)
+	{
+	case STATE_INIT:
+		{
+			const MiniGameDef &def = MiniGameDef::GetCustomGameModeById(miniGame->GetId(), true);
+			SetupMiniGameInstance(def, 0);
+
+			m_tickCounter = 0;
+			SetState(STATE_LOBBY_WAIT);
+			app.DebugPrintf("MasterGameMode: Entered LOBBY_WAIT state for minigame %d\n", miniGame->GetId());
+		}
+		break;
+
+	case STATE_LOBBY_WAIT:
+		{
+			m_tickCounter++;
+
+			MinecraftServer *server = MinecraftServer::getInstance();
+			if(!server) break;
+
+			PlayerList *playerList = server->getPlayers();
+			if(!playerList) break;
+
+			for(auto it = playerList->players.begin(); it != playerList->players.end(); it++)
+			{
+				shared_ptr<ServerPlayer> player = *it;
+				if(!player) continue;
+
+				if(player->gameMode->getGameModeForPlayer() != GameType::LOBBY)
+				{
+					player->setGameMode(GameType::LOBBY);
+					app.DebugPrintf("MasterGameMode: Set player to LOBBY mode\n");
+				}
+			}
+		}
+		break;
+
+	case STATE_MAP_SELECT:
+	case STATE_LOADING:
+	case STATE_PRE_ROUND:
+	case STATE_IN_ROUND_A:
+	case STATE_IN_ROUND_B:
+	case STATE_POST_ROUND:
+	case STATE_ROUND_RESULTS:
+	case STATE_TRANSITION_A:
+	case STATE_INTER_ROUND:
+	case STATE_FINAL_RESULTS:
+	case STATE_TRANSITION_B:
+	case STATE_GAME_OVER:
+	case STATE_SHUTDOWN:
+		m_tickCounter++;
+		break;
+	}
 }
 
 long long MasterGameMode::RestartMapGenerator()
@@ -129,12 +203,28 @@ void MasterGameMode::SetLockPlayerPositions(bool lock)
 
 void MasterGameMode::SetState(EInternalGameModeState state)
 {
-	// TODO: store state and broadcast to clients
+	m_state = state;
+	m_tickCounter = 0;
 }
 
 void MasterGameMode::SetPlayersInvulnerable(bool invulnerable)
 {
 	m_playersInvulnerable = invulnerable;
+
+	MinecraftServer *server = MinecraftServer::getInstance();
+	if(!server) return;
+
+	PlayerList *playerList = server->getPlayers();
+	if(!playerList) return;
+
+	for(auto it = playerList->players.begin(); it != playerList->players.end(); it++)
+	{
+		shared_ptr<ServerPlayer> player = *it;
+		if(!player) continue;
+
+		player->abilities.invulnerable = invulnerable;
+		player->onUpdateAbilities();
+	}
 }
 
 void MasterGameMode::SelectNewGameRules()
@@ -225,4 +315,20 @@ void MasterGameMode::OnRefillChestTimer(MasterGameMode *_this, void *data)
 void MasterGameMode::OnGracePeriodEnd(MasterGameMode *_this, void *data)
 {
 	_this->SetPlayersInvulnerable(false);
+}
+
+void MasterGameMode::SetAllPlayersGameType(GameType *type)
+{
+	MinecraftServer *server = MinecraftServer::getInstance();
+	if(!server) return;
+
+	PlayerList *playerList = server->getPlayers();
+	if(!playerList) return;
+
+	for(auto it = playerList->players.begin(); it != playerList->players.end(); it++)
+	{
+		shared_ptr<ServerPlayer> player = *it;
+		if(player)
+			player->setGameMode(type);
+	}
 }

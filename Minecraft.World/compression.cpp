@@ -4,6 +4,16 @@
 #include "..\Minecraft.Client\Common\zlib\zlib.h"
 #endif
 
+#ifdef _WIN64
+#include "lzxmain.h"
+#endif
+
+#ifdef _WIN64
+#define LZX_LOG(fmt, ...) MC_LOG("[LZX] " fmt, __VA_ARGS__)
+#else
+#define LZX_LOG(fmt, ...)
+#endif
+
 #if defined __PSVITA__
 #include "..\Minecraft.Client\PSVita\PSVitaExtras\zlib.h"
 #elif defined __PS3__
@@ -182,6 +192,13 @@ HRESULT Compression::CompressRLE(void *pDestination, unsigned int *pDestSize, vo
 
 HRESULT Compression::DecompressLZXRLE(void *pDestination, unsigned int *pDestSize, void *pSource, unsigned int SrcSize)
 {
+	LZX_LOG("DecompressLZXRLE ENTER: pSrc=%p srcSize=%u pDst=%p dstSize=%u", pSource, SrcSize, pDestination, *pDestSize);
+	if (SrcSize > 0) {
+		unsigned char* pb = (unsigned char*)pSource;
+		LZX_LOG("  src first 16 bytes: %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X",
+			pb[0], pb[1], pb[2], pb[3], pb[4], pb[5], pb[6], pb[7],
+			pb[8], pb[9], pb[10], pb[11], pb[12], pb[13], pb[14], pb[15]);
+	}
 	EnterCriticalSection(&rleDecompressLock);
 	// 4J Stu - Fix for #13676 - Crash: Crash while attempting to load a world after updating TU
 	// Some saves can have chunks that decompress into very large sizes, so I have doubled the size of this buffer
@@ -196,22 +213,37 @@ HRESULT Compression::DecompressLZXRLE(void *pDestination, unsigned int *pDestSiz
 	unsigned int rleSize = staticRleSize;
 	unsigned char *dynamicRleBuf = NULL;
 
+	HRESULT hr;
+	LZX_LOG("  DecompressLZXRLE: rleSize=%u, destSize=%u, using %s buffer", rleSize, *pDestSize, (*pDestSize > rleSize) ? "DYNAMIC" : "STATIC");
 	if(*pDestSize > rleSize)
 	{
 		rleSize = *pDestSize;
 		dynamicRleBuf = new unsigned char[rleSize];
-		Decompress(dynamicRleBuf, &rleSize, pSource, SrcSize);
+		LZX_LOG("  DecompressLZXRLE: calling Decompress (dynamic buf, rleSize=%u)", rleSize);
+		hr = Decompress(dynamicRleBuf, &rleSize, pSource, SrcSize);
 		pucIn = (unsigned char *)dynamicRleBuf;
 	}
 	else
 	{
-		Decompress(rleDecompressBuf, &rleSize, pSource, SrcSize);
+		LZX_LOG("  DecompressLZXRLE: calling Decompress (static buf, rleSize=%u)", rleSize);
+		hr = Decompress(rleDecompressBuf, &rleSize, pSource, SrcSize);
 		pucIn = (unsigned char *)rleDecompressBuf;
+	}
+
+	LZX_LOG("  DecompressLZXRLE: Decompress returned hr=0x%08X, rleSize=%u", (unsigned int)hr, rleSize);
+	if (FAILED(hr))
+	{
+		LZX_LOG("  DecompressLZXRLE: FAILED! hr=0x%08X", (unsigned int)hr);
+		if (dynamicRleBuf) delete[] dynamicRleBuf;
+		*pDestSize = 0;
+		LeaveCriticalSection(&rleDecompressLock);
+		return hr;
 	}
 
 	//unsigned char *pucIn = (unsigned char *)rleDecompressBuf;
 	unsigned char *pucEnd = pucIn + rleSize;
 	unsigned char *pucOut = (unsigned char *)pDestination;
+	unsigned char *pucOutEnd = (unsigned char *)pDestination + *pDestSize;
 
 	while( pucIn != pucEnd )
 	{
@@ -224,6 +256,7 @@ HRESULT Compression::DecompressLZXRLE(void *pDestination, unsigned int *pDestSiz
 				count++;
 				for( unsigned int i = 0; i < count; i++ )
 				{
+					if(pucOut >= pucOutEnd) goto rle_done;
 					*pucOut++ = 255;
 				}
 			}
@@ -233,18 +266,21 @@ HRESULT Compression::DecompressLZXRLE(void *pDestination, unsigned int *pDestSiz
 				unsigned char data = *pucIn++;
 				for( unsigned int i = 0; i < count; i++ )
 				{
+					if(pucOut >= pucOutEnd) goto rle_done;
 					*pucOut++ = data;
 				}
 			}
 		}
 		else
 		{
+			if(pucOut >= pucOutEnd) goto rle_done;
 			*pucOut++ = thisOne;
 		}
 	}
+rle_done:
 	*pDestSize = (unsigned int)(pucOut - (unsigned char *)pDestination);
 
-//	printf("Decompressed from %d to %d to %d\n",SrcSize,rleSize,*pDestSize);
+	LZX_LOG("DecompressLZXRLE OK: srcSize=%u -> lzxSize=%u -> rleDecoded=%u", SrcSize, rleSize, *pDestSize);
 
 	if(dynamicRleBuf != NULL) delete [] dynamicRleBuf;
 
@@ -320,9 +356,11 @@ HRESULT Compression::Compress(void *pDestination, unsigned int *pDestSize, void 
 
 HRESULT Compression::Decompress(void *pDestination, unsigned int *pDestSize, void *pSource, unsigned int SrcSize)
 {
+	LZX_LOG("Decompress ENTER: decompType=%d localType=%d srcSize=%u dstSize=%u", (int)m_decompressType, (int)m_localDecompressType, SrcSize, *pDestSize);
 
 	if(m_decompressType != m_localDecompressType)	// check if we're decompressing data from a different platform
 	{
+		LZX_LOG("  Decompress: type mismatch -> DecompressWithType (type=%d)", (int)m_decompressType);
 		// only used for loading a save from a different platform (Sony cloud storage cross play)
 		return DecompressWithType(pDestination, pDestSize, pSource, SrcSize);
 	}
@@ -385,16 +423,43 @@ VOID Compression::VitaVirtualDecompress(void *pDestination, unsigned int *pDestS
 
 HRESULT Compression::DecompressWithType(void *pDestination, unsigned int *pDestSize, void *pSource, unsigned int SrcSize)
 {
+	LZX_LOG("DecompressWithType ENTER: type=%d srcSize=%u dstSize=%u pSrc=%p pDst=%p", (int)m_decompressType, SrcSize, *pDestSize, pSource, pDestination);
 	switch(m_decompressType)
 	{
 	case eCompressionType_RLE: // 4J-JEV, RLE is just that; don't want to break here though.
 	case eCompressionType_None:
+		LZX_LOG("  DecompressWithType: None/RLE memcpy %u bytes", SrcSize);
 		memcpy(pDestination,pSource,SrcSize);
 		*pDestSize = SrcSize;
 		return S_OK;
 	case eCompressionType_LZXRLE:
 		{
-#if (defined _XBOX || defined _DURANGO || defined _WIN64)
+#if defined _WIN64
+			LZX_LOG("  DecompressWithType: LZXRLE calling appDecompressLZX srcSize=%d dstSize=%d", (int)SrcSize, (int)(*pDestSize));
+			if (SrcSize > 0) {
+				unsigned char* pb = (unsigned char*)pSource;
+				LZX_LOG("    src bytes: %02X %02X %02X %02X %02X %02X %02X %02X", pb[0], pb[1], pb[2], pb[3], pb[4], pb[5], pb[6], pb[7]);
+			}
+			int outSize = (int)(*pDestSize);
+			int lzxResult = appDecompressLZX((byte*)pSource, (int)SrcSize, (byte*)pDestination, &outSize);
+			*pDestSize = (unsigned int)outSize;
+			LZX_LOG("  DecompressWithType: appDecompressLZX returned %d, outputSize=%u", lzxResult, *pDestSize);
+			if (lzxResult != 0) {
+				LZX_LOG("  DecompressWithType: LZXRLE FAILED result=%d", lzxResult);
+				return E_FAIL;
+			}
+			return S_OK;
+#elif (defined _XBOX || defined _DURANGO)
+			if (!decompressionContext)
+			{
+				XMEMCODEC_PARAMETERS_LZX p;
+				p.Flags = 0;
+				p.WindowSize = 128 * 1024;
+				p.CompressionPartitionSize = 128 * 1024;
+				XMemCreateDecompressionContext(XMEMCODEC_LZX, &p, 0, &decompressionContext);
+				if (!decompressionContext)
+					return E_FAIL;
+			}
 			SIZE_T destSize = (SIZE_T)(*pDestSize);
 			HRESULT res = XMemDecompress(decompressionContext, pDestination, (SIZE_T *)&destSize, pSource, SrcSize);
 			*pDestSize = (unsigned int)destSize;

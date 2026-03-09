@@ -387,8 +387,100 @@ bool DLCManager::readDLCDataFile(DWORD &dwFilesProcessed, const string &path, DL
 	return processDLCDataFile(dwFilesProcessed, pbData, bytesRead, pack);
 }
 
+static void swapBytes4(void *p)
+{
+	BYTE *b = (BYTE *)p;
+	BYTE t;
+	t = b[0]; b[0] = b[3]; b[3] = t;
+	t = b[1]; b[1] = b[2]; b[2] = t;
+}
+
+static void swapBytes2(void *p)
+{
+	BYTE *b = (BYTE *)p;
+	BYTE t = b[0]; b[0] = b[1]; b[1] = t;
+}
+
+static void byteSwapPCKFields(PBYTE pbData, DWORD dwLength)
+{
+	if (dwLength < 8) return;
+
+	unsigned int rawVersion = *(unsigned int *)pbData;
+	if (rawVersion <= 0xFFFF) return;
+
+	unsigned int off = 0;
+
+	swapBytes4(&pbData[off]);
+	off += 4;
+
+	swapBytes4(&pbData[off]);
+	unsigned int paramCount = *(unsigned int *)&pbData[off];
+	off += 4;
+
+	for (unsigned int i = 0; i < paramCount; i++)
+	{
+		if (off + 10 > dwLength) return;
+		C4JStorage::DLC_FILE_PARAM *p = (C4JStorage::DLC_FILE_PARAM *)&pbData[off];
+		swapBytes4(&p->dwType);
+		swapBytes4(&p->dwWchCount);
+		DWORD wchTotal = 2 + p->dwWchCount;
+		for (DWORD w = 0; w < wchTotal; w++)
+			swapBytes2(&p->wchData[w]);
+		off += sizeof(C4JStorage::DLC_FILE_PARAM) + p->dwWchCount * sizeof(WCHAR);
+	}
+
+	if (off + 4 > dwLength) return;
+
+	swapBytes4(&pbData[off]);
+	unsigned int fileCount = *(unsigned int *)&pbData[off];
+	off += 4;
+
+	unsigned int headersOff = off;
+	for (unsigned int i = 0; i < fileCount; i++)
+	{
+		if (off + 14 > dwLength) return;
+		C4JStorage::DLC_FILE_DETAILS *p = (C4JStorage::DLC_FILE_DETAILS *)&pbData[off];
+		swapBytes4(&p->uiFileSize);
+		swapBytes4(&p->dwType);
+		swapBytes4(&p->dwWchCount);
+		DWORD wchTotal = 2 + p->dwWchCount;
+		for (DWORD w = 0; w < wchTotal; w++)
+			swapBytes2(&p->wchFile[w]);
+		off += sizeof(C4JStorage::DLC_FILE_DETAILS) + p->dwWchCount * sizeof(WCHAR);
+	}
+
+	PBYTE pbTemp = &pbData[off];
+	unsigned int detOff = headersOff;
+	for (unsigned int i = 0; i < fileCount; i++)
+	{
+		if ((DWORD)(pbTemp - pbData) + 4 > dwLength) return;
+		C4JStorage::DLC_FILE_DETAILS *pFile = (C4JStorage::DLC_FILE_DETAILS *)&pbData[detOff];
+
+		swapBytes4(pbTemp);
+		unsigned int pCount = *(unsigned int *)pbTemp;
+		pbTemp += 4;
+
+		for (unsigned int j = 0; j < pCount; j++)
+		{
+			if ((DWORD)(pbTemp - pbData) + 10 > dwLength) return;
+			C4JStorage::DLC_FILE_PARAM *p = (C4JStorage::DLC_FILE_PARAM *)pbTemp;
+			swapBytes4(&p->dwType);
+			swapBytes4(&p->dwWchCount);
+			DWORD wchTotal = 2 + p->dwWchCount;
+			for (DWORD w = 0; w < wchTotal; w++)
+				swapBytes2(&p->wchData[w]);
+			pbTemp += sizeof(C4JStorage::DLC_FILE_PARAM) + p->dwWchCount * sizeof(WCHAR);
+		}
+
+		pbTemp += pFile->uiFileSize;
+		detOff += sizeof(C4JStorage::DLC_FILE_DETAILS) + pFile->dwWchCount * sizeof(WCHAR);
+	}
+}
+
 bool DLCManager::processDLCDataFile(DWORD &dwFilesProcessed, PBYTE pbData, DWORD dwLength, DLCPack *pack)
 {
+	byteSwapPCKFields(pbData, dwLength);
+
 	unordered_map<int, DLCManager::EDLCParameterType> parameterMapping;
 	unsigned int uiCurrentByte=0;
 
@@ -594,6 +686,8 @@ DWORD DLCManager::retrievePackIDFromDLCDataFile(const string &path, DLCPack *pac
 
 DWORD DLCManager::retrievePackID(PBYTE pbData, DWORD dwLength, DLCPack *pack)
 {
+	byteSwapPCKFields(pbData, dwLength);
+
 	DWORD packId=0;
 	bool bPackIDSet=false;
 	unordered_map<int, DLCManager::EDLCParameterType> parameterMapping;

@@ -130,6 +130,9 @@ void ServerPlayerGameMode::startDestroyBlock(int x, int y, int z, int face)
 {
 	if(!player->isAllowedToMine()) return;
 
+	if (gameModeForPlayer == GameType::LOBBY)
+		return;
+
 	if (gameModeForPlayer->isAdventureRestricted())
 	{
 		if (!player->mayDestroyBlockAt(x, y, z))

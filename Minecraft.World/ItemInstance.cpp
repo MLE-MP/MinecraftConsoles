@@ -105,6 +105,8 @@ shared_ptr<ItemInstance> ItemInstance::remove(int count)
 
 Item *ItemInstance::getItem() const
 {
+	if (id < 0 || id >= (int)Item::items.length)
+		return NULL;
 	return Item::items[id];
 }
 

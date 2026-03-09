@@ -505,6 +505,14 @@ void Tile::staticCtor()
 
 	Stats::buildItemStats();
 
+	for (int i = 1; i < TILE_NUM_COUNT; i++)
+	{
+		if (Tile::tiles[i] == NULL)
+		{
+			(new Tile(i, Material::air, false))->setDestroyTime(0.0f);
+		}
+	}
+
 	// */
 }
 
@@ -515,6 +523,8 @@ void Tile::_init(int id, Material *material, bool isSolidRender)
 	explosionResistance = 0.0f;
 	isInventoryItem = true;
 	collectStatistics = true;
+	descriptionId = 0;
+	useDescriptionId = 0;
 
 	// 4J Stu - Removed these in favour of TLS versions
 	//xx0 = yy0 = zz0 = xx1 = yy1 = zz1 = 0;
@@ -1418,6 +1428,8 @@ wstring Tile::getIconName()
 
 void Tile::registerIcons(IconRegister *iconRegister)
 {
+	if (material == Material::air)
+		return;
 	icon = iconRegister->registerIcon(getIconName());
 }
 

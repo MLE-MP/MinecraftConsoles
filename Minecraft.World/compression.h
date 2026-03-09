@@ -84,3 +84,31 @@ private:
 #else
 #define APPROPRIATE_COMPRESSION_TYPE Compression::eCompressionType_LZXRLE
 #endif
+
+#ifdef _WIN64
+#include <cstdio>
+#include <cstdarg>
+inline FILE* mclog_getfile(bool reset = false) {
+	static FILE* f = nullptr;
+	static bool inited = false;
+	if (reset || !inited) {
+		inited = true;
+		if (f) fclose(f);
+		fopen_s(&f, "mc_debug.log", "w");
+	}
+	return f;
+}
+inline void mclog_write(const char* fmt, ...) {
+	char buf[2048];
+	va_list args;
+	va_start(args, fmt);
+	vsprintf_s(buf, fmt, args);
+	va_end(args);
+	OutputDebugStringA(buf);
+	FILE* f = mclog_getfile();
+	if (f) { fputs(buf, f); fflush(f); }
+}
+#define MC_LOG(fmt, ...) mclog_write(fmt "\n", __VA_ARGS__)
+#else
+#define MC_LOG(fmt, ...)
+#endif

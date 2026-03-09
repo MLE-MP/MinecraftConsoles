@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "UI.h"
 #include "UIScene_MiniGameSelectMenu.h"
+#include "UIScene_MiniGameCreateMenu.h"
 #include "..\..\Minecraft.h"
 #include "..\..\..\Minecraft.World\MiniGameDef.h"
 #include "..\..\..\Minecraft.World\EMiniGameId.h"
@@ -9,16 +10,21 @@ UIScene_MiniGameSelectMenu::UIScene_MiniGameSelectMenu(int iPad, void *initData,
 {
 	initialiseMovie();
 
-	m_mode = eMode_Create;
-	m_selectedMiniGame = -1;
 	m_bIgnorePress = false;
 
-	m_buttons[(int)eControl_Battle].init(L"Battle", eControl_Battle);
-	m_buttons[(int)eControl_Tumble].init(L"Tumble", eControl_Tumble);
-	m_buttons[(int)eControl_Glide].init(L"Glide", eControl_Glide);
-	m_buttons[(int)eControl_CreateJoinToggle].init(L"Mode: Create", eControl_CreateJoinToggle);
+	m_gameList.init(eControl_GameList);
 
-	handleReload();
+	m_gameList.addItem(L"Battle");
+	m_gameList.addItem(L"Tumble");
+	m_gameList.addItem(L"Glide");
+
+	m_labelSavesListTitle.init(L"Mini Games");
+	m_labelJoinListTitle.init(L"");
+	m_labelNoGames.init(L"");
+
+	m_controlJoinTimer.setVisible(false);
+	m_controlSavesTimer.setVisible(false);
+
 	doHorizontalResizeCheck();
 }
 
@@ -28,18 +34,12 @@ UIScene_MiniGameSelectMenu::~UIScene_MiniGameSelectMenu()
 
 wstring UIScene_MiniGameSelectMenu::getMoviePath()
 {
-	return L"MainMenu";
+	return L"LoadOrJoinMenu";
 }
 
 void UIScene_MiniGameSelectMenu::updateTooltips()
 {
-}
-
-void UIScene_MiniGameSelectMenu::handleReload()
-{
-	removeControl(&m_hiddenButtons[0], false);
-	removeControl(&m_hiddenButtons[1], false);
-	m_controlTimer.setVisible(false);
+	ui.SetTooltips(DEFAULT_XUI_MENU_USER, IDS_TOOLTIPS_SELECT, IDS_TOOLTIPS_BACK, -1, -1);
 }
 
 void UIScene_MiniGameSelectMenu::handleInput(int iPad, int key, bool repeat, bool pressed, bool released, bool &handled)
@@ -76,30 +76,19 @@ void UIScene_MiniGameSelectMenu::handlePress(F64 controlId, F64 childId)
 
 	switch((int)controlId)
 	{
-	case eControl_Battle:
-		if(m_mode == eMode_Create)
+	case eControl_GameList:
+		switch((int)childId)
+		{
+		case 0:
 			LaunchMiniGame(MINIGAME_BATTLE);
-		else
-			JoinMiniGame();
-		break;
-	case eControl_Tumble:
-		if(m_mode == eMode_Create)
+			break;
+		case 1:
 			LaunchMiniGame(MINIGAME_TUMBLE);
-		else
-			JoinMiniGame();
-		break;
-	case eControl_Glide:
-		if(m_mode == eMode_Create)
+			break;
+		case 2:
 			LaunchMiniGame(MINIGAME_GLIDE);
-		else
-			JoinMiniGame();
-		break;
-	case eControl_CreateJoinToggle:
-		if(m_mode == eMode_Create)
-			m_mode = eMode_Join;
-		else
-			m_mode = eMode_Create;
-		UpdateModeLabel();
+			break;
+		}
 		break;
 	}
 }
@@ -108,14 +97,6 @@ void UIScene_MiniGameSelectMenu::handleGainFocus(bool navBack)
 {
 	UIScene::handleGainFocus(navBack);
 	m_bIgnorePress = false;
-}
-
-void UIScene_MiniGameSelectMenu::UpdateModeLabel()
-{
-	if(m_mode == eMode_Create)
-		m_buttons[(int)eControl_CreateJoinToggle].setLabel(L"Mode: Create");
-	else
-		m_buttons[(int)eControl_CreateJoinToggle].setLabel(L"Mode: Join");
 }
 
 void UIScene_MiniGameSelectMenu::LaunchMiniGame(EMiniGameId miniGameId)
@@ -128,14 +109,11 @@ void UIScene_MiniGameSelectMenu::LaunchMiniGame(EMiniGameId miniGameId)
 
 	pMinecraft->SetupMiniGameInstance(MiniGameDef::GetCustomGameModeById(miniGameId, true), 0);
 
-	// navigate to load menu to configure options before starting the game
-	ui.NavigateToScene(m_iPad, eUIScene_LoadMenu, NULL);
-}
+	MiniGameCreateMenuInitData *params = new MiniGameCreateMenuInitData();
+	params->iPad = m_iPad;
+	params->miniGameId = miniGameId;
+	params->bOnline = FALSE;
+	params->bIsPrivate = FALSE;
 
-void UIScene_MiniGameSelectMenu::JoinMiniGame()
-{
-	m_bIgnorePress = true;
-
-	// navigate to the join menu to find/join existing games
-	ui.NavigateToScene(m_iPad, eUIScene_JoinMenu, NULL);
+	ui.NavigateToScene(m_iPad, eUIScene_MiniGameCreateMenu, params);
 }

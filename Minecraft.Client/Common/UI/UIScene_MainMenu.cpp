@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "..\..\..\Minecraft.World\Mth.h"
 #include "..\..\..\Minecraft.World\MiniGameDef.h"
+#include "..\..\..\Minecraft.World\MasterGameMode.h"
 #include "..\..\..\Minecraft.World\StringHelpers.h"
 #include "..\..\..\Minecraft.World\Random.h"
 #include "..\..\User.h"
@@ -110,6 +111,12 @@ UIScene_MainMenu::UIScene_MainMenu(int iPad, void *initData, UILayer *parentLaye
 	if(pMinecraft != NULL)
 	{
 		pMinecraft->SetupMiniGameInstance(MiniGameDef::GetCustomGameModeById(MINIGAME_NORMAL_WORLD, true), 0);
+		if(pMinecraft->m_masterGameMode)
+		{
+			pMinecraft->m_masterGameMode->OnExitedGame();
+			delete pMinecraft->m_masterGameMode;
+			pMinecraft->m_masterGameMode = NULL;
+		}
 	}
 
 	// 4J Stu - Reset the leaving game flag so that we correctly handle signouts while in the menus
