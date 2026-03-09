@@ -17,6 +17,8 @@
 
 #include "discord_rpc.h"
 
+int g_autosaveInterval = 120;
+
 DWORD WINAPI DiscordRPCThreadFunc(LPVOID lpParam) {
 
 	DiscordEventHandlers handlers;

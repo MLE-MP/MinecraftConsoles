@@ -63,6 +63,9 @@
 #include "Durango\Network\NetworkPlayerDurango.h"
 #endif
 
+#ifdef _WINDOWS64
+#include "Windows64/Windows64_Launcher.h"
+#endif
 #define DEBUG_SERVER_DONT_SPAWN_MOBS 0
 
 //4J Added
@@ -1732,9 +1735,21 @@ void MinecraftServer::run(__int64 seed, void *lpParameter)
 
 		__int64 lastTime = getCurrentTimeMillis();
 		__int64 unprocessedTime = 0;
+
+		extern int g_autosaveInterval;
+		__int64 computedInterval = ((_int64)(g_autosaveInterval) * 1000);
+		__int64 lastSaveTime = lastTime;
+
 		while (running && !s_bServerHalted)
 		{
 			__int64 now = getCurrentTimeMillis();
+			if (g_Win64DedicatedServer) {
+				if (now - lastSaveTime > computedInterval) {
+					app.SetXuiServerAction(ProfileManager.GetPrimaryPad(), eXuiServerAction_AutoSaveGame);
+					lastSaveTime = now;
+				}
+			}
+			
 
 			// 4J Stu - When we pause the server, we don't want to count that as time passed
 			// 4J Stu - TU-1 hotifx - Remove this line. We want to make sure that we tick connections at the proper rate when paused

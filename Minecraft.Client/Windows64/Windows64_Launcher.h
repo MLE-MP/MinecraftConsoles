@@ -4,6 +4,8 @@
 #include <string>
 #include <functional>
 
+extern int g_autosaveInterval;
+
 class Windows64Launcher {
 public:
 	static int GetViewDistance();

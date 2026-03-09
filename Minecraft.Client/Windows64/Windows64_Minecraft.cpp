@@ -1085,6 +1085,21 @@ static int RunHeadlessServer()
 	app.SetGameHostOption(eGameHostOption_NaturalRegeneration, serverSettings.getBoolean(L"natural-regeneration", true) ? 1 : 0);
 	app.SetGameHostOption(eGameHostOption_DoDaylightCycle, 1);
 
+	std::wstring worldSize = serverSettings.getString(L"world-size", L"classic");
+
+	int worldSize_int = 1; //default to classic
+
+	if (worldSize == std::wstring(L"classic")) worldSize_int = 1;
+	else if (worldSize == std::wstring(L"small")) worldSize_int = 2;
+	else if (worldSize == std::wstring(L"medium")) worldSize_int = 3;
+	else if (worldSize == std::wstring(L"large")) worldSize_int = 4;
+
+	app.SetGameHostOption(eGameHostOption_WorldSize, worldSize_int);
+
+	extern int g_autosaveInterval;
+
+	g_autosaveInterval = (serverSettings.getBoolean(L"enable-autosave", true) ? serverSettings.getInt(L"autosave-interval-seconds", 120) : -1);
+
 	MinecraftServer::resetFlags();
 	g_NetworkManager.HostGame(0, false, true, MINECRAFT_NET_MAX_PLAYERS, 0);
 
