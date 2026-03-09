@@ -6,6 +6,7 @@ using namespace std;
 
 #include "UIEnums.h"
 #include "UIControl_Base.h"
+#include "UIControl_TextInput.h"
 
 class ItemRenderer;
 class UILayer;
@@ -141,8 +142,11 @@ public:
 	virtual void tick();
 
 	IggyName registerFastName(const wstring &name);
+
+#if defined(__PSVITA__) || defined(_WINDOWS64)
+	void SetFocusToElement(int iID);
+#endif
 #ifdef __PSVITA__
-	void SetFocusToElement(int iID); 
 	void UpdateSceneControls();
 #endif
 protected:
@@ -176,6 +180,15 @@ public:
 
 	// returns main panel if controls are not living in the root
 	virtual UIControl* GetMainPanel();
+
+#ifdef _WINDOWS64
+	// Direct edit support: scenes override to register their text inputs.
+	// Base class handles tickDirectEdit in tick(), click-outside-to-deselect
+	// in handleMouseClick(), and provides isDirectEditBlocking() for guards.
+	virtual void getDirectEditInputs(vector<UIControl_TextInput*>& inputs) {}
+	virtual void onDirectEditFinished(UIControl_TextInput* input, UIControl_TextInput::EDirectEditResult result) {}
+	bool isDirectEditBlocking();
+#endif
 
 	void removeControl( UIControl_Base *control, bool centreScene);
 	void slideLeft();

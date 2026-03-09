@@ -234,7 +234,7 @@ void UIScene::initialiseMovie()
 	m_bUpdateOpacity = true;
 }
 
-#ifdef __PSVITA__
+#if defined(__PSVITA__) || defined(_WINDOWS64)
 void UIScene::SetFocusToElement(int iID)
 {
 	IggyDataValue result;
@@ -447,6 +447,19 @@ void UIScene::tick()
 		IggyPlayerTickRS( swf );
 		m_hasTickedOnce = true;
 	}
+
+#ifdef _WINDOWS64
+	{
+		vector<UIControl_TextInput*> inputs;
+		getDirectEditInputs(inputs);
+		for (size_t i = 0; i < inputs.size(); i++)
+		{
+			UIControl_TextInput::EDirectEditResult result = inputs[i]->tickDirectEdit();
+			if (result != UIControl_TextInput::eDirectEdit_Continue)
+				onDirectEditFinished(inputs[i], result);
+		}
+	}
+#endif
 }
 
 UIControl* UIScene::GetMainPanel()
@@ -454,6 +467,19 @@ UIControl* UIScene::GetMainPanel()
 	return NULL;
 }
 
+#ifdef _WINDOWS64
+bool UIScene::isDirectEditBlocking()
+{
+	vector<UIControl_TextInput*> inputs;
+	getDirectEditInputs(inputs);
+	for (size_t i = 0; i < inputs.size(); i++)
+	{
+		if (inputs[i]->isDirectEditing() || inputs[i]->getDirectEditCooldown() > 0)
+			return true;
+	}
+	return false;
+}
+#endif
 
 void UIScene::addTimer(int id, int ms)
 {
