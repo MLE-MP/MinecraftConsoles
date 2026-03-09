@@ -196,9 +196,19 @@ HRESULT Compression::DecompressLZXRLE(void *pDestination, unsigned int *pDestSiz
 	unsigned int rleSize = staticRleSize;
 	unsigned char *dynamicRleBuf = NULL;
 
-	if(*pDestSize > rleSize)
+	unsigned int safeRleSize = max(rleSize, *pDestSize);
+
+	const unsigned int MAX_RLE_ALLOC = 16 * 1024 * 1024; // 16 MB
+	if (safeRleSize > MAX_RLE_ALLOC)
 	{
-		rleSize = *pDestSize;
+		LeaveCriticalSection(&rleDecompressLock);
+		*pDestSize = 0;
+		return E_FAIL;
+	}
+
+	if (safeRleSize > staticRleSize)
+	{
+		rleSize = safeRleSize;
 		dynamicRleBuf = new unsigned char[rleSize];
 		Decompress(dynamicRleBuf, &rleSize, pSource, SrcSize);
 		pucIn = (unsigned char *)dynamicRleBuf;
@@ -212,16 +222,19 @@ HRESULT Compression::DecompressLZXRLE(void *pDestination, unsigned int *pDestSiz
 	//unsigned char *pucIn = (unsigned char *)rleDecompressBuf;
 	unsigned char *pucEnd = pucIn + rleSize;
 	unsigned char *pucOut = (unsigned char *)pDestination;
+	unsigned char* pucOutEnd = pucOut + *pDestSize;
 
 	while( pucIn != pucEnd )
 	{
 		unsigned char thisOne = *pucIn++;
 		if( thisOne == 255 )
 		{
+			if (pucIn >= pucEnd) break;
 			unsigned int count = *pucIn++;
 			if( count < 3 )
 			{
 				count++;
+				if (pucOut + count > pucOutEnd) { pucOut = pucOutEnd; break; }
 				for( unsigned int i = 0; i < count; i++ )
 				{
 					*pucOut++ = 255;
@@ -230,7 +243,9 @@ HRESULT Compression::DecompressLZXRLE(void *pDestination, unsigned int *pDestSiz
 			else
 			{
 				count++;
+				if (pucIn >= pucEnd) break;
 				unsigned char data = *pucIn++;
+				if (pucOut + count > pucOutEnd) { pucOut = pucOutEnd; break; }
 				for( unsigned int i = 0; i < count; i++ )
 				{
 					*pucOut++ = data;
@@ -239,6 +254,7 @@ HRESULT Compression::DecompressLZXRLE(void *pDestination, unsigned int *pDestSiz
 		}
 		else
 		{
+			if (pucOut >= pucOutEnd) break;
 			*pucOut++ = thisOne;
 		}
 	}
@@ -260,16 +276,19 @@ HRESULT Compression::DecompressRLE(void *pDestination, unsigned int *pDestSize, 
 	unsigned char *pucIn  = (unsigned char *)pSource;
 	unsigned char *pucEnd = pucIn + SrcSize;
 	unsigned char *pucOut = (unsigned char *)pDestination;
+	unsigned char* pucOutEnd = pucOut + *pDestSize;
 
 	while( pucIn != pucEnd )
 	{
 		unsigned char thisOne = *pucIn++;
 		if( thisOne == 255 )
 		{
+			if (pucIn >= pucEnd) break;
 			unsigned int count = *pucIn++;
 			if( count < 3 )
 			{
 				count++;
+				if (pucOut + count > pucOutEnd) { pucOut = pucOutEnd; break; }
 				for( unsigned int i = 0; i < count; i++ )
 				{
 					*pucOut++ = 255;
@@ -278,7 +297,9 @@ HRESULT Compression::DecompressRLE(void *pDestination, unsigned int *pDestSize, 
 			else
 			{
 				count++;
+				if (pucIn >= pucEnd) break;
 				unsigned char data = *pucIn++;
+				if (pucOut + count > pucOutEnd) { pucOut = pucOutEnd; break; }
 				for( unsigned int i = 0; i < count; i++ )
 				{
 					*pucOut++ = data;
@@ -287,6 +308,7 @@ HRESULT Compression::DecompressRLE(void *pDestination, unsigned int *pDestSize, 
 		}
 		else
 		{
+			if (pucOut >= pucOutEnd) break;
 			*pucOut++ = thisOne;
 		}
 	}

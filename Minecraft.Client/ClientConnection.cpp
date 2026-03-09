@@ -2846,26 +2846,35 @@ void ClientConnection::handleContainerOpen(shared_ptr<ContainerOpenPacket> packe
 {
 	bool failed = false;
 	shared_ptr<MultiplayerLocalPlayer> player = minecraft->localplayers[m_userIndex];
-	switch(packet->type)
+	switch (packet->type)
 	{
 	case ContainerOpenPacket::BONUS_CHEST:
 	case ContainerOpenPacket::LARGE_CHEST:
 	case ContainerOpenPacket::ENDER_CHEST:
 	case ContainerOpenPacket::CONTAINER:
 	case ContainerOpenPacket::MINECART_CHEST:
+	{
+		int chestString;
+		switch (packet->type)
 		{
-			int chestString;
-			switch (packet->type)
-			{
-			case ContainerOpenPacket::MINECART_CHEST:	chestString = IDS_ITEM_MINECART;	break;
-			case ContainerOpenPacket::BONUS_CHEST:		chestString = IDS_BONUS_CHEST;		break;
-			case ContainerOpenPacket::LARGE_CHEST:		chestString = IDS_CHEST_LARGE;		break;
-			case ContainerOpenPacket::ENDER_CHEST:		chestString = IDS_TILE_ENDERCHEST;	break;
-			case ContainerOpenPacket::CONTAINER:		chestString = IDS_CHEST;			break;
-			default: assert(false);						chestString = -1;					break;
-			}
+		case ContainerOpenPacket::MINECART_CHEST:	chestString = IDS_ITEM_MINECART;	break;
+		case ContainerOpenPacket::BONUS_CHEST:		chestString = IDS_BONUS_CHEST;		break;
+		case ContainerOpenPacket::LARGE_CHEST:		chestString = IDS_CHEST_LARGE;		break;
+		case ContainerOpenPacket::ENDER_CHEST:		chestString = IDS_TILE_ENDERCHEST;	break;
+		case ContainerOpenPacket::CONTAINER:		chestString = IDS_CHEST;			break;
+		default:
+			throw IOException(L"ClientConnection::handleContainerOpen - invalid container type");
+		}
 
-			if( player->openContainer(shared_ptr<SimpleContainer>( new SimpleContainer(chestString, packet->title, packet->customName, packet->size) )))
+
+
+		// izzint - surprised how little checks are here
+		const int MAX_CONTAINER_SIZE = 54; // double chest should be max, right?
+		if (packet->size < 0 || packet->size > MAX_CONTAINER_SIZE) {
+			throw IOException(L"ClientConnection::handleContainerOpen - invalid container size");
+		}
+
+			if (player->openContainer(shared_ptr<SimpleContainer>(new SimpleContainer(chestString, packet->title, packet->customName, packet->size))))
 			{
 				player->containerMenu->containerId = packet->containerId;
 			}
@@ -2876,186 +2885,186 @@ void ClientConnection::handleContainerOpen(shared_ptr<ContainerOpenPacket> packe
 		}
 		break;
 	case ContainerOpenPacket::HOPPER:
+	{
+		shared_ptr<HopperTileEntity> hopper = shared_ptr<HopperTileEntity>(new HopperTileEntity());
+		if (packet->customName) hopper->setCustomName(packet->title);
+		if (player->openHopper(hopper))
 		{
-			shared_ptr<HopperTileEntity> hopper = shared_ptr<HopperTileEntity>(new HopperTileEntity());
-			if (packet->customName) hopper->setCustomName(packet->title);
-			if(player->openHopper(hopper))
-			{
-				player->containerMenu->containerId = packet->containerId;
-			}
-			else
-			{
-				failed = true;
-			}
+			player->containerMenu->containerId = packet->containerId;
 		}
-		break;
+		else
+		{
+			failed = true;
+		}
+	}
+	break;
 	case ContainerOpenPacket::FURNACE:
+	{
+		shared_ptr<FurnaceTileEntity> furnace = shared_ptr<FurnaceTileEntity>(new FurnaceTileEntity());
+		if (packet->customName) furnace->setCustomName(packet->title);
+		if (player->openFurnace(furnace))
 		{
-			shared_ptr<FurnaceTileEntity> furnace = shared_ptr<FurnaceTileEntity>(new FurnaceTileEntity());
-			if (packet->customName) furnace->setCustomName(packet->title);
-			if(player->openFurnace(furnace))
-			{
-				player->containerMenu->containerId = packet->containerId;
-			}
-			else
-			{
-				failed = true;
-			}
+			player->containerMenu->containerId = packet->containerId;
 		}
-		break;
+		else
+		{
+			failed = true;
+		}
+	}
+	break;
 	case ContainerOpenPacket::BREWING_STAND:
-		{
-			shared_ptr<BrewingStandTileEntity> brewingStand = shared_ptr<BrewingStandTileEntity>(new BrewingStandTileEntity());
-			if (packet->customName) brewingStand->setCustomName(packet->title);
+	{
+		shared_ptr<BrewingStandTileEntity> brewingStand = shared_ptr<BrewingStandTileEntity>(new BrewingStandTileEntity());
+		if (packet->customName) brewingStand->setCustomName(packet->title);
 
-			if( player->openBrewingStand(brewingStand))
-			{
-				player->containerMenu->containerId = packet->containerId;
-			}
-			else
-			{
-				failed = true;
-			}
+		if (player->openBrewingStand(brewingStand))
+		{
+			player->containerMenu->containerId = packet->containerId;
 		}
-		break;
+		else
+		{
+			failed = true;
+		}
+	}
+	break;
 	case ContainerOpenPacket::DROPPER:
-		{
-			shared_ptr<DropperTileEntity> dropper = shared_ptr<DropperTileEntity>(new DropperTileEntity());
-			if (packet->customName) dropper->setCustomName(packet->title);
+	{
+		shared_ptr<DropperTileEntity> dropper = shared_ptr<DropperTileEntity>(new DropperTileEntity());
+		if (packet->customName) dropper->setCustomName(packet->title);
 
-			if( player->openTrap(dropper))
-			{
-				player->containerMenu->containerId = packet->containerId;
-			}
-			else
-			{
-				failed = true;
-			}
+		if (player->openTrap(dropper))
+		{
+			player->containerMenu->containerId = packet->containerId;
 		}
-		break;
+		else
+		{
+			failed = true;
+		}
+	}
+	break;
 	case ContainerOpenPacket::TRAP:
-		{
-			shared_ptr<DispenserTileEntity> dispenser = shared_ptr<DispenserTileEntity>(new DispenserTileEntity());
-			if (packet->customName) dispenser->setCustomName(packet->title);
+	{
+		shared_ptr<DispenserTileEntity> dispenser = shared_ptr<DispenserTileEntity>(new DispenserTileEntity());
+		if (packet->customName) dispenser->setCustomName(packet->title);
 
-			if( player->openTrap(dispenser))
-			{
-				player->containerMenu->containerId = packet->containerId;
-			}
-			else
-			{
-				failed = true;
-			}
+		if (player->openTrap(dispenser))
+		{
+			player->containerMenu->containerId = packet->containerId;
 		}
-		break;
+		else
+		{
+			failed = true;
+		}
+	}
+	break;
 	case ContainerOpenPacket::WORKBENCH:
+	{
+		if (player->startCrafting(Mth::floor(player->x), Mth::floor(player->y), Mth::floor(player->z)))
 		{
-			if( player->startCrafting(Mth::floor(player->x), Mth::floor(player->y), Mth::floor(player->z)) )
-			{
-				player->containerMenu->containerId = packet->containerId;
-			}
-			else
-			{
-				failed = true;
-			}
+			player->containerMenu->containerId = packet->containerId;
 		}
-		break;
+		else
+		{
+			failed = true;
+		}
+	}
+	break;
 	case ContainerOpenPacket::ENCHANTMENT:
+	{
+		if (player->startEnchanting(Mth::floor(player->x), Mth::floor(player->y), Mth::floor(player->z), packet->customName ? packet->title : L""))
 		{
-			if( player->startEnchanting(Mth::floor(player->x), Mth::floor(player->y), Mth::floor(player->z), packet->customName ? packet->title : L"") )
-			{
-				player->containerMenu->containerId = packet->containerId;
-			}
-			else
-			{
-				failed = true;
-			}
+			player->containerMenu->containerId = packet->containerId;
 		}
-		break;
+		else
+		{
+			failed = true;
+		}
+	}
+	break;
 	case ContainerOpenPacket::TRADER_NPC:
+	{
+		shared_ptr<ClientSideMerchant> csm = shared_ptr<ClientSideMerchant>(new ClientSideMerchant(player, packet->title));
+		csm->createContainer();
+		if (player->openTrading(csm, packet->customName ? packet->title : L""))
 		{
-			shared_ptr<ClientSideMerchant> csm = shared_ptr<ClientSideMerchant>(new ClientSideMerchant(player, packet->title));
-			csm->createContainer();
-			if(player->openTrading(csm, packet->customName ? packet->title : L""))
-			{
-				player->containerMenu->containerId = packet->containerId;
-			}
-			else
-			{
-				failed = true;
-			}
+			player->containerMenu->containerId = packet->containerId;
 		}
-		break;
+		else
+		{
+			failed = true;
+		}
+	}
+	break;
 	case ContainerOpenPacket::BEACON:
-		{
-			shared_ptr<BeaconTileEntity> beacon = shared_ptr<BeaconTileEntity>(new BeaconTileEntity());
-			if (packet->customName) beacon->setCustomName(packet->title);
+	{
+		shared_ptr<BeaconTileEntity> beacon = shared_ptr<BeaconTileEntity>(new BeaconTileEntity());
+		if (packet->customName) beacon->setCustomName(packet->title);
 
-			if(player->openBeacon(beacon))
-			{
-				player->containerMenu->containerId = packet->containerId;
-			}
-			else
-			{
-				failed = true;
-			}
+		if (player->openBeacon(beacon))
+		{
+			player->containerMenu->containerId = packet->containerId;
 		}
-		break;
+		else
+		{
+			failed = true;
+		}
+	}
+	break;
 	case ContainerOpenPacket::REPAIR_TABLE:
+	{
+		if (player->startRepairing(Mth::floor(player->x), Mth::floor(player->y), Mth::floor(player->z)))
 		{
-			if(player->startRepairing(Mth::floor(player->x), Mth::floor(player->y), Mth::floor(player->z)))
-			{
-				player->containerMenu->containerId = packet->containerId;
-			}
-			else
-			{
-				failed = true;
-			}
+			player->containerMenu->containerId = packet->containerId;
 		}
-		break;
+		else
+		{
+			failed = true;
+		}
+	}
+	break;
 	case ContainerOpenPacket::HORSE:
+	{
+		shared_ptr<EntityHorse> entity = dynamic_pointer_cast<EntityHorse>(getEntity(packet->entityId));
+		int iTitle = IDS_CONTAINER_ANIMAL;
+		switch (entity->getType())
 		{
-			shared_ptr<EntityHorse> entity = dynamic_pointer_cast<EntityHorse>( getEntity(packet->entityId) );
-			int iTitle = IDS_CONTAINER_ANIMAL;
-			switch(entity->getType())
-			{
-			case EntityHorse::TYPE_DONKEY:
-				iTitle = IDS_DONKEY;
-				break;
-			case EntityHorse::TYPE_MULE:
-				iTitle = IDS_MULE;
-				break;
-			};
-			if(player->openHorseInventory(dynamic_pointer_cast<EntityHorse>(entity), shared_ptr<AnimalChest>(new AnimalChest(iTitle, packet->title, packet->customName, packet->size))))
-			{
-				player->containerMenu->containerId = packet->containerId;
-			}
-			else
-			{
-				failed = true;
-			}
+		case EntityHorse::TYPE_DONKEY:
+			iTitle = IDS_DONKEY;
+			break;
+		case EntityHorse::TYPE_MULE:
+			iTitle = IDS_MULE;
+			break;
+		};
+		if (player->openHorseInventory(dynamic_pointer_cast<EntityHorse>(entity), shared_ptr<AnimalChest>(new AnimalChest(iTitle, packet->title, packet->customName, packet->size))))
+		{
+			player->containerMenu->containerId = packet->containerId;
 		}
-		break;
+		else
+		{
+			failed = true;
+		}
+	}
+	break;
 	case ContainerOpenPacket::FIREWORKS:
+	{
+		if (player->openFireworks(Mth::floor(player->x), Mth::floor(player->y), Mth::floor(player->z)))
 		{
-			if( player->openFireworks(Mth::floor(player->x), Mth::floor(player->y), Mth::floor(player->z)) )
-			{
-				player->containerMenu->containerId = packet->containerId;
-			}
-			else
-			{
-				failed = true;
-			}
+			player->containerMenu->containerId = packet->containerId;
 		}
-		break;
+		else
+		{
+			failed = true;
+		}
+	}
+	break;
 	}
 
-	if(failed)
+	if (failed)
 	{
 		// Failed - if we've got a non-inventory container currently here, close that, which locally should put us back
 		// to not having a container open, and should send a containerclose to the server so it doesn't have a container open.
 		// If we don't have a non-inventory container open, just send the packet, and again we ought to be in sync with the server.
-		if( player->containerMenu != player->inventoryMenu )
+		if (player->containerMenu != player->inventoryMenu)
 		{
 			ui.CloseUIScenes(m_userIndex);
 		}

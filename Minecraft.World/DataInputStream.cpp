@@ -83,7 +83,12 @@ void DataInputStream::close()
 //the boolean value read.
 bool DataInputStream::readBoolean()
 {
-	return stream->read() != 0;
+	int val = stream->read();
+
+	// izzint - strange situation
+	if ((val) == -1) { return 0; }
+
+	return val != 0;
 }
 
 //Reads and returns one input byte. The byte is treated as a signed value in the range -128 through 127, inclusive.
