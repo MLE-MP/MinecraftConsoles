@@ -6,16 +6,25 @@ class ChatScreen : public Screen
 {
 protected:
 	wstring message;
+	int cursorIndex;
+	void applyHistoryMessage();
 private:
 	int frame;
+	static const size_t CHAT_HISTORY_MAX = 100;
+	static std::vector<wstring> s_chatHistory;
+	static int s_historyIndex;
+	static wstring s_historyDraft;
+	static const wstring allowedChars;
+	static bool isAllowedChatChar(wchar_t c);
 
 public:
 	ChatScreen();	//4J added
 	virtual void init();
-    virtual void removed();
-    virtual void tick();
-private:
-	static const wstring allowedChars;
+	virtual void removed();
+	virtual void tick();
+	virtual void handlePasteRequest();
+	virtual void handleHistoryUp();
+	virtual void handleHistoryDown();
 protected:
 	void keyPressed(wchar_t ch, int eventKey);
 public:

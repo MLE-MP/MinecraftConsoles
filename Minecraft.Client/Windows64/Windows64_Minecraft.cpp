@@ -7,7 +7,6 @@
 #include <iostream>
 #include <ShellScalingApi.h>
 #include <shellapi.h>
-#include "discord_rpc.h"
 #include "GameConfig\Minecraft.spa.h"
 #include "..\MinecraftServer.h"
 #include "..\LocalPlayer.h"
@@ -23,6 +22,9 @@
 #include "..\..\Minecraft.World\net.minecraft.world.level.tile.h"
 
 #include "..\ClientConnection.h"
+#include "..\Minecraft.h"
+#include "..\ChatScreen.h"
+#include "KeyboardMouseInput.h"
 #include "..\User.h"
 #include "..\..\Minecraft.World\Socket.h"
 #include "..\..\Minecraft.World\ThreadName.h"
@@ -551,7 +553,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_SYSKEYDOWN:
 	{
 		int vk = (int)wParam;
-		if (lParam & 0x40000000) break; // ignore auto-repeat
+		if ((lParam & 0x40000000) && vk != VK_LEFT && vk != VK_RIGHT && vk != VK_BACK)
+			break;
+#ifdef _WINDOWS64
+		Minecraft* pm = Minecraft::GetInstance();
+		ChatScreen* chat = pm && pm->screen ? dynamic_cast<ChatScreen*>(pm->screen) : nullptr;
+		if (chat)
+		{
+			if (vk == 'V' && (GetKeyState(VK_CONTROL) & 0x8000))
+			{
+				chat->handlePasteRequest(); break;
+			}
+			if ((vk == VK_UP || vk == VK_DOWN) && !(lParam & 0x40000000))
+			{
+				if (vk == VK_UP) chat->handleHistoryUp(); else chat->handleHistoryDown(); break;
+			}
+			if (vk >= '1' && vk <= '9') // Prevent hotkey conflicts
+				break;
+		}
+#endif
 		if (vk == VK_SHIFT)
 			vk = (MapVirtualKey((lParam >> 16) & 0xFF, MAPVK_VSC_TO_VK_EX) == VK_RSHIFT) ? VK_RSHIFT : VK_LSHIFT;
 		else if (vk == VK_CONTROL)
@@ -1600,6 +1620,15 @@ void StartGame(Win64LaunchOptions launchOptions, bool nCmdShow) {
 
 				}
 			}
+		}
+
+		//todo: make / add a slash in the chat on open
+		// Open chat
+		if ((g_KBMInput.IsKeyPressed('T') || g_KBMInput.IsKeyPressed('/')) && app.GetGameStarted() && !ui.GetMenuDisplayed(0) && pMinecraft->screen == NULL)
+		{
+			g_KBMInput.ClearCharBuffer();
+			pMinecraft->setScreen(new ChatScreen());
+			SetFocus(g_hWnd);
 		}
 
 #if 0

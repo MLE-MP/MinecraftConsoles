@@ -39,6 +39,9 @@ public:
 	virtual void init(Minecraft *minecraft, int width, int height);
     virtual void setSize(int width, int height);
     virtual void init();
+    virtual void handlePasteRequest() {}
+    virtual void handleHistoryUp() {}
+    virtual void handleHistoryDown() {}
     virtual void updateEvents();
     virtual void mouseEvent();
     virtual void keyboardEvent();
