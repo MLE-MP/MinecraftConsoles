@@ -145,6 +145,10 @@ public:
 	virtual void tick();
 
 	IggyName registerFastName(const wstring &name);
+<<<<<<< HEAD
+=======
+
+>>>>>>> f369b442bbf95ec6cc383f73e73c39cc6678f6d3
 #if defined(__PSVITA__) || defined(_WINDOWS64)
 	void SetFocusToElement(int iID);
 #endif
@@ -190,10 +194,13 @@ public:
 	virtual void getDirectEditInputs(vector<UIControl_TextInput*>& inputs) {}
 	virtual void onDirectEditFinished(UIControl_TextInput* input, UIControl_TextInput::EDirectEditResult result) {}
 	bool isDirectEditBlocking();
+<<<<<<< HEAD
 
 	// Mouse click dispatch. Hit-tests C++ controls and picks the smallest-area
 	// match, then calls handlePress. Override for custom behaviour (e.g. crafting).
 	virtual bool handleMouseClick(F32 x, F32 y);
+=======
+>>>>>>> f369b442bbf95ec6cc383f73e73c39cc6678f6d3
 #endif
 
 	void removeControl( UIControl_Base *control, bool centreScene);

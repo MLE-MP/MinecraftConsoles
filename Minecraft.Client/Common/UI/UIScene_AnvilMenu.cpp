@@ -6,31 +6,31 @@
 #include "..\..\Minecraft.h"
 #include "UIScene_AnvilMenu.h"
 
-UIScene_AnvilMenu::UIScene_AnvilMenu(int iPad, void *_initData, UILayer *parentLayer) : UIScene_AbstractContainerMenu(iPad, parentLayer)
+UIScene_AnvilMenu::UIScene_AnvilMenu(int iPad, void* _initData, UILayer* parentLayer) : UIScene_AbstractContainerMenu(iPad, parentLayer)
 {
 	// Setup all the Iggy references we need for this scene
 	initialiseMovie();
 
 	m_showingCross = false;
-	m_textInputAnvil.init(m_itemName,eControl_TextInput);
+	m_textInputAnvil.init(m_itemName, eControl_TextInput);
 
-	m_labelAnvil.init( app.GetString(IDS_REPAIR_AND_NAME) );
+	m_labelAnvil.init(app.GetString(IDS_REPAIR_AND_NAME));
 
-	AnvilScreenInput *initData = (AnvilScreenInput *)_initData;
+	AnvilScreenInput* initData = (AnvilScreenInput*)_initData;
 	m_inventory = initData->inventory;
 
-	Minecraft *pMinecraft = Minecraft::GetInstance();
-	if( pMinecraft->localgameModes[iPad] != NULL )
+	Minecraft* pMinecraft = Minecraft::GetInstance();
+	if (pMinecraft->localgameModes[iPad] != NULL)
 	{
-		TutorialMode *gameMode = (TutorialMode *)pMinecraft->localgameModes[iPad];
+		TutorialMode* gameMode = (TutorialMode*)pMinecraft->localgameModes[iPad];
 		m_previousTutorialState = gameMode->getTutorial()->getCurrentState();
 		gameMode->getTutorial()->changeTutorialState(e_Tutorial_State_Anvil_Menu, this);
 	}
 
-	m_repairMenu = new AnvilMenu( initData->inventory, initData->level, initData->x, initData->y, initData->z, pMinecraft->localplayers[iPad] );
+	m_repairMenu = new AnvilMenu(initData->inventory, initData->level, initData->x, initData->y, initData->z, pMinecraft->localplayers[iPad]);
 	m_repairMenu->addSlotListener(this);
 
-	Initialize( iPad, m_repairMenu, true, AnvilMenu::INV_SLOT_START, eSectionAnvilUsing, eSectionAnvilMax );
+	Initialize(iPad, m_repairMenu, true, AnvilMenu::INV_SLOT_START, eSectionAnvilUsing, eSectionAnvilMax);
 
 	m_slotListItem1.addSlots(AnvilMenu::INPUT_SLOT, 1);
 	m_slotListItem2.addSlots(AnvilMenu::ADDITIONAL_SLOT, 1);
@@ -39,14 +39,14 @@ UIScene_AnvilMenu::UIScene_AnvilMenu(int iPad, void *_initData, UILayer *parentL
 	bool expensive = false;
 	wstring m_costString = L"";
 
-	if(m_repairMenu->cost > 0)
+	if (m_repairMenu->cost > 0)
 	{
-		if(m_repairMenu->cost >= 40 && !pMinecraft->localplayers[iPad]->abilities.instabuild)
+		if (m_repairMenu->cost >= 40 && !pMinecraft->localplayers[iPad]->abilities.instabuild)
 		{
 			m_costString = app.GetString(IDS_REPAIR_EXPENSIVE);
 			expensive = true;
 		}
-		else if(!m_repairMenu->getSlot(AnvilMenu::RESULT_SLOT)->hasItem())
+		else if (!m_repairMenu->getSlot(AnvilMenu::RESULT_SLOT)->hasItem())
 		{
 			// Do nothing
 		}
@@ -56,7 +56,7 @@ UIScene_AnvilMenu::UIScene_AnvilMenu(int iPad, void *_initData, UILayer *parentL
 			wchar_t temp[256];
 			swprintf(temp, 256, costString, m_repairMenu->cost);
 			m_costString = temp;
-			if(!m_repairMenu->getSlot(AnvilMenu::RESULT_SLOT)->mayPickup(dynamic_pointer_cast<Player>(m_inventory->player->shared_from_this())))
+			if (!m_repairMenu->getSlot(AnvilMenu::RESULT_SLOT)->mayPickup(dynamic_pointer_cast<Player>(m_inventory->player->shared_from_this())))
 			{
 				expensive = true;
 			}
@@ -64,7 +64,7 @@ UIScene_AnvilMenu::UIScene_AnvilMenu(int iPad, void *_initData, UILayer *parentL
 	}
 	setCostLabel(m_costString, expensive);
 
-	if(initData) delete initData;
+	if (initData) delete initData;
 
 	setIgnoreInput(false);
 
@@ -73,7 +73,7 @@ UIScene_AnvilMenu::UIScene_AnvilMenu(int iPad, void *_initData, UILayer *parentL
 
 wstring UIScene_AnvilMenu::getMoviePath()
 {
-	if(app.GetLocalPlayerCount() > 1)
+	if (app.GetLocalPlayerCount() > 1)
 	{
 		return L"AnvilMenuSplit";
 	}
@@ -85,7 +85,7 @@ wstring UIScene_AnvilMenu::getMoviePath()
 
 void UIScene_AnvilMenu::handleReload()
 {
-	Initialize( m_iPad, m_menu, true, AnvilMenu::INV_SLOT_START, eSectionAnvilUsing, eSectionAnvilMax  );
+	Initialize(m_iPad, m_menu, true, AnvilMenu::INV_SLOT_START, eSectionAnvilUsing, eSectionAnvilMax);
 
 	m_slotListItem1.addSlots(AnvilMenu::INPUT_SLOT, 1);
 	m_slotListItem2.addSlots(AnvilMenu::ADDITIONAL_SLOT, 1);
@@ -108,14 +108,18 @@ void UIScene_AnvilMenu::tick()
 		}
 	}
 #endif
+<<<<<<< HEAD
 	
+=======
+
+>>>>>>> f369b442bbf95ec6cc383f73e73c39cc6678f6d3
 	handleTick();
 }
 
 int UIScene_AnvilMenu::getSectionColumns(ESceneSection eSection)
 {
 	int cols = 0;
-	switch( eSection )
+	switch (eSection)
 	{
 	case eSectionAnvilItem1:
 		cols = 1;
@@ -133,7 +137,7 @@ int UIScene_AnvilMenu::getSectionColumns(ESceneSection eSection)
 		cols = 9;
 		break;
 	default:
-		assert( false );
+		assert(false);
 		break;
 	}
 	return cols;
@@ -142,7 +146,7 @@ int UIScene_AnvilMenu::getSectionColumns(ESceneSection eSection)
 int UIScene_AnvilMenu::getSectionRows(ESceneSection eSection)
 {
 	int rows = 0;
-	switch( eSection )
+	switch (eSection)
 	{
 	case eSectionAnvilItem1:
 		rows = 1;
@@ -160,15 +164,15 @@ int UIScene_AnvilMenu::getSectionRows(ESceneSection eSection)
 		rows = 1;
 		break;
 	default:
-		assert( false );
+		assert(false);
 		break;
 	}
 	return rows;
 }
 
-void UIScene_AnvilMenu::GetPositionOfSection( ESceneSection eSection, UIVec2D* pPosition )
+void UIScene_AnvilMenu::GetPositionOfSection(ESceneSection eSection, UIVec2D* pPosition)
 {
-	switch( eSection )
+	switch (eSection)
 	{
 	case eSectionAnvilItem1:
 		pPosition->x = m_slotListItem1.getXPos();
@@ -195,16 +199,16 @@ void UIScene_AnvilMenu::GetPositionOfSection( ESceneSection eSection, UIVec2D* p
 		pPosition->y = m_slotListHotbar.getYPos();
 		break;
 	default:
-		assert( false );
+		assert(false);
 		break;
 	}
 }
 
-void UIScene_AnvilMenu::GetItemScreenData( ESceneSection eSection, int iItemIndex, UIVec2D* pPosition, UIVec2D* pSize )
+void UIScene_AnvilMenu::GetItemScreenData(ESceneSection eSection, int iItemIndex, UIVec2D* pPosition, UIVec2D* pSize)
 {
 	UIVec2D sectionSize;
 
-	switch( eSection )
+	switch (eSection)
 	{
 	case eSectionAnvilItem1:
 		sectionSize.x = m_slotListItem1.getWidth();
@@ -231,20 +235,20 @@ void UIScene_AnvilMenu::GetItemScreenData( ESceneSection eSection, int iItemInde
 		sectionSize.y = m_slotListHotbar.getHeight();
 		break;
 	default:
-		assert( false );
+		assert(false);
 		break;
 	}
 
-	if(IsSectionSlotList(eSection))
+	if (IsSectionSlotList(eSection))
 	{
 		int rows = getSectionRows(eSection);
 		int cols = getSectionColumns(eSection);
 
-		pSize->x = sectionSize.x/cols;
-		pSize->y = sectionSize.y/rows;
+		pSize->x = sectionSize.x / cols;
+		pSize->y = sectionSize.y / rows;
 
 		int itemCol = iItemIndex % cols;
-		int itemRow = iItemIndex/cols;
+		int itemRow = iItemIndex / cols;
 
 		pPosition->x = itemCol * pSize->x;
 		pPosition->y = itemRow * pSize->y;
@@ -263,8 +267,8 @@ void UIScene_AnvilMenu::setSectionSelectedSlot(ESceneSection eSection, int x, in
 
 	int index = (y * cols) + x;
 
-	UIControl_SlotList *slotList = NULL;
-	switch( eSection )
+	UIControl_SlotList* slotList = NULL;
+	switch (eSection)
 	{
 	case eSectionAnvilItem1:
 		slotList = &m_slotListItem1;
@@ -282,17 +286,17 @@ void UIScene_AnvilMenu::setSectionSelectedSlot(ESceneSection eSection, int x, in
 		slotList = &m_slotListHotbar;
 		break;
 	default:
-		assert( false );
+		assert(false);
 		break;
 	}
 
 	slotList->setHighlightSlot(index);
 }
 
-UIControl *UIScene_AnvilMenu::getSection(ESceneSection eSection)
+UIControl* UIScene_AnvilMenu::getSection(ESceneSection eSection)
 {
-	UIControl *control = NULL;
-	switch( eSection )
+	UIControl* control = NULL;
+	switch (eSection)
 	{
 	case eSectionAnvilItem1:
 		control = &m_slotListItem1;
@@ -313,7 +317,7 @@ UIControl *UIScene_AnvilMenu::getSection(ESceneSection eSection)
 		control = &m_slotListHotbar;
 		break;
 	default:
-		assert( false );
+		assert(false);
 		break;
 	}
 	return control;
@@ -321,6 +325,7 @@ UIControl *UIScene_AnvilMenu::getSection(ESceneSection eSection)
 
 #ifdef _WINDOWS64
 void UIScene_AnvilMenu::getDirectEditInputs(vector<UIControl_TextInput*>& inputs)
+<<<<<<< HEAD
 {
 	inputs.push_back(&m_textInputAnvil);
 }
@@ -333,14 +338,28 @@ void UIScene_AnvilMenu::onDirectEditFinished(UIControl_TextInput* input, UIContr
 #endif
 
 int UIScene_AnvilMenu::KeyboardCompleteCallback(LPVOID lpParam,bool bRes)
+=======
+>>>>>>> f369b442bbf95ec6cc383f73e73c39cc6678f6d3
 {
-	// 4J HEG - No reason to set value if keyboard was cancelled
-	UIScene_AnvilMenu *pClass=(UIScene_AnvilMenu *)lpParam;
+	inputs.push_back(&m_textInputAnvil);
+}
+
+void UIScene_AnvilMenu::onDirectEditFinished(UIControl_TextInput* input, UIControl_TextInput::EDirectEditResult result)
+{
+	m_itemName = input->getEditBuffer();
+	updateItemName();
+}
+#endif
+
+int UIScene_AnvilMenu::KeyboardCompleteCallback(LPVOID lpParam, bool bRes)
+{
+	UIScene_AnvilMenu* pClass = (UIScene_AnvilMenu*)lpParam;
 	pClass->setIgnoreInput(false);
 
 	if (bRes)
 	{
 #ifdef _WINDOWS64
+<<<<<<< HEAD
 		uint16_t pchText[128];
 		ZeroMemory(pchText, 128 * sizeof(uint16_t));
 		Win64_GetKeyboardText(pchText, 128);
@@ -348,12 +367,24 @@ int UIScene_AnvilMenu::KeyboardCompleteCallback(LPVOID lpParam,bool bRes)
 		pClass->m_itemName = (wchar_t*)pchText;
 		pClass->updateItemName();
 #else
+=======
+>>>>>>> f369b442bbf95ec6cc383f73e73c39cc6678f6d3
 		uint16_t pchText[128];
-		ZeroMemory(pchText, 128 * sizeof(uint16_t) );
-		InputManager.GetText(pchText);
-		pClass->setEditNameValue((wchar_t *)pchText);
-		pClass->m_itemName = (wchar_t *)pchText;
+		ZeroMemory(pchText, 128 * sizeof(uint16_t));
+		Win64_GetKeyboardText(pchText, 128);
+		pClass->setEditNameValue((wchar_t*)pchText);
+		pClass->m_itemName = (wchar_t*)pchText;
 		pClass->updateItemName();
+<<<<<<< HEAD
+=======
+#else
+		uint16_t pchText[128];
+		ZeroMemory(pchText, 128 * sizeof(uint16_t));
+		InputManager.GetText(pchText);
+		pClass->setEditNameValue((wchar_t*)pchText);
+		pClass->m_itemName = (wchar_t*)pchText;
+		pClass->updateItemName();
+>>>>>>> f369b442bbf95ec6cc383f73e73c39cc6678f6d3
 #endif
 	}
 	return 0;
@@ -384,25 +415,25 @@ void UIScene_AnvilMenu::handleEditNamePressed()
 	setIgnoreInput(true);
 #if defined(__PS3__) || defined(__ORBIS__) || defined __PSVITA__
 	int language = XGetLanguage();
-	switch(language)
+	switch (language)
 	{
 	case XC_LANGUAGE_JAPANESE:
 	case XC_LANGUAGE_KOREAN:
 	case XC_LANGUAGE_TCHINESE:
-		InputManager.RequestKeyboard(app.GetString(IDS_TITLE_RENAME),m_textInputAnvil.getLabel(),(DWORD)m_iPad,30,&UIScene_AnvilMenu::KeyboardCompleteCallback,this,C_4JInput::EKeyboardMode_Default);
+		InputManager.RequestKeyboard(app.GetString(IDS_TITLE_RENAME), m_textInputAnvil.getLabel(), (DWORD)m_iPad, 30, &UIScene_AnvilMenu::KeyboardCompleteCallback, this, C_4JInput::EKeyboardMode_Default);
 		break;
 	default:
-		// 4J Stu - Use a different keyboard for non-asian languages so we don't have prediction on
-		InputManager.RequestKeyboard(app.GetString(IDS_TITLE_RENAME),m_textInputAnvil.getLabel(),(DWORD)m_iPad,30,&UIScene_AnvilMenu::KeyboardCompleteCallback,this,C_4JInput::EKeyboardMode_Alphabet_Extended);
+		InputManager.RequestKeyboard(app.GetString(IDS_TITLE_RENAME), m_textInputAnvil.getLabel(), (DWORD)m_iPad, 30, &UIScene_AnvilMenu::KeyboardCompleteCallback, this, C_4JInput::EKeyboardMode_Alphabet_Extended);
 		break;
 	}
 #else
-	InputManager.RequestKeyboard(app.GetString(IDS_TITLE_RENAME),m_textInputAnvil.getLabel(),(DWORD)m_iPad,30,&UIScene_AnvilMenu::KeyboardCompleteCallback,this,C_4JInput::EKeyboardMode_Default);
+	InputManager.RequestKeyboard(app.GetString(IDS_TITLE_RENAME), m_textInputAnvil.getLabel(), (DWORD)m_iPad, 30, &UIScene_AnvilMenu::KeyboardCompleteCallback, this, C_4JInput::EKeyboardMode_Default);
+#endif
 #endif
 #endif
 }
 
-void UIScene_AnvilMenu::setEditNameValue(const wstring &name)
+void UIScene_AnvilMenu::setEditNameValue(const wstring& name)
 {
 	m_textInputAnvil.setLabel(name);
 }
@@ -411,7 +442,7 @@ void UIScene_AnvilMenu::setEditNameEditable(bool enabled)
 {
 }
 
-void UIScene_AnvilMenu::setCostLabel(const wstring &label, bool canAfford)
+void UIScene_AnvilMenu::setCostLabel(const wstring& label, bool canAfford)
 {
 	if (!getMovie()) return;
 
@@ -426,12 +457,12 @@ void UIScene_AnvilMenu::setCostLabel(const wstring &label, bool canAfford)
 
 	value[1].type = IGGY_DATATYPE_boolean;
 	value[1].boolval = canAfford;
-	IggyResult out = IggyPlayerCallMethodRS ( getMovie() , &result, IggyPlayerRootPath( getMovie() ), m_funcSetCostLabel , 2 , value );
+	IggyResult out = IggyPlayerCallMethodRS(getMovie(), &result, IggyPlayerRootPath(getMovie()), m_funcSetCostLabel, 2, value);
 }
 
 void UIScene_AnvilMenu::showCross(bool show)
 {
-	if(m_showingCross != show)
+	if (m_showingCross != show)
 	{
 		if (!getMovie()) return;
 
@@ -440,7 +471,7 @@ void UIScene_AnvilMenu::showCross(bool show)
 
 		value[0].type = IGGY_DATATYPE_boolean;
 		value[0].boolval = show;
-		IggyResult out = IggyPlayerCallMethodRS ( getMovie() , &result, IggyPlayerRootPath( getMovie() ), m_funcShowRedCross , 1 , value );
+		IggyResult out = IggyPlayerCallMethodRS(getMovie(), &result, IggyPlayerRootPath(getMovie()), m_funcShowRedCross, 1, value);
 
 		m_showingCross = show;
 	}

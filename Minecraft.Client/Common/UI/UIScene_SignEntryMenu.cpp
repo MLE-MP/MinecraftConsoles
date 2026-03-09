@@ -285,6 +285,7 @@ void UIScene_SignEntryMenu::onDirectEditFinished(UIControl_TextInput* input, UIC
 	}
 }
 
+<<<<<<< HEAD
 bool UIScene_SignEntryMenu::handleMouseClick(F32 x, F32 y)
 {
 	if (m_iActiveDirectEditLine >= 0)
@@ -306,6 +307,8 @@ bool UIScene_SignEntryMenu::handleMouseClick(F32 x, F32 y)
 	}
 	return UIScene::handleMouseClick(x, y);
 }
+=======
+>>>>>>> f369b442bbf95ec6cc383f73e73c39cc6678f6d3
 #endif
 
 int UIScene_SignEntryMenu::KeyboardCompleteCallback(LPVOID lpParam,bool bRes)

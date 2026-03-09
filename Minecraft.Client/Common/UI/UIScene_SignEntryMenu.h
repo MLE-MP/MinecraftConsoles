@@ -59,7 +59,10 @@ public:
 #ifdef _WINDOWS64
 	virtual void getDirectEditInputs(vector<UIControl_TextInput*>& inputs);
 	virtual void onDirectEditFinished(UIControl_TextInput* input, UIControl_TextInput::EDirectEditResult result);
+<<<<<<< HEAD
 	virtual bool handleMouseClick(F32 x, F32 y);
+=======
+>>>>>>> f369b442bbf95ec6cc383f73e73c39cc6678f6d3
 #endif
 
 protected:

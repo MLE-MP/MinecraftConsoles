@@ -479,6 +479,7 @@ bool UIScene::isDirectEditBlocking()
 	}
 	return false;
 }
+<<<<<<< HEAD
 
 bool UIScene::handleMouseClick(F32 x, F32 y)
 {
@@ -573,6 +574,8 @@ bool UIScene::handleMouseClick(F32 x, F32 y)
 	}
 	return false;
 }
+=======
+>>>>>>> f369b442bbf95ec6cc383f73e73c39cc6678f6d3
 #endif
 
 void UIScene::addTimer(int id, int ms)

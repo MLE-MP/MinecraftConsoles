@@ -284,4 +284,8 @@ void UIControl_TextInput::confirmDirectEdit()
 	}
 }
 
+<<<<<<< HEAD
 #endif
+=======
+#endif
+>>>>>>> f369b442bbf95ec6cc383f73e73c39cc6678f6d3
