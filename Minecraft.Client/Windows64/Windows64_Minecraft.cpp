@@ -7,6 +7,7 @@
 #include <iostream>
 #include <ShellScalingApi.h>
 #include <shellapi.h>
+#include "discord_rpc.h"
 #include "GameConfig\Minecraft.spa.h"
 #include "..\MinecraftServer.h"
 #include "..\LocalPlayer.h"
