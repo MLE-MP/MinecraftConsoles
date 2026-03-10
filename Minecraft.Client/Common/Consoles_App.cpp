@@ -197,6 +197,8 @@ CMinecraftApp::CMinecraftApp()
 	InitializeCriticalSection(&csMemFilesLock);
 	InitializeCriticalSection(&csMemTPDLock);
 
+	ScanAndLoadCustomSkins();
+
 	InitializeCriticalSection(&m_saveNotificationCriticalSection);
 	m_saveNotificationDepth = 0;
 
@@ -5722,6 +5724,66 @@ void CMinecraftApp::RemoveMemoryTextureFile(const wstring &wName)
 	LeaveCriticalSection(&csMemFilesLock);
 }
 
+void CMinecraftApp::ScanAndLoadCustomSkins() // By 0xlibless ;) 
+{
+	DebugPrintf("CustomSkins scanning inited\n");
+	
+	// Try multiple relative paths just in case (game dir or project dir)
+	const wchar_t* paths[] = { L"Windows64\\CustomSkins\\*.png", L"..\\CustomSkins\\*.png" };
+	const wchar_t* folderPaths[] = { L"Windows64\\CustomSkins\\", L"..\\CustomSkins\\" };
+	
+	for (int i = 0; i < 2; ++i)
+	{
+		WIN32_FIND_DATAW fd;
+		HANDLE hFind = FindFirstFileW(paths[i], &fd);
+		if (hFind != INVALID_HANDLE_VALUE)
+		{
+			DebugPrintf("Found CustomSkins folder at: %ls\n", folderPaths[i]);
+			do {
+				if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+				{
+					wstring filename = fd.cFileName;
+					wstring fullPath = wstring(folderPaths[i]) + filename;
+					FILE* f = _wfopen(fullPath.c_str(), L"rb");
+					if (f)
+					{
+						DebugPrintf("Loading skin file: %ls\n", fullPath.c_str());
+						fseek(f, 0, SEEK_END);
+						DWORD dwSize = (DWORD)ftell(f);
+						rewind(f);
+						if (dwSize > 0 && dwSize < 2 * 1024 * 1024) // 2MB limit
+						{
+							BYTE* pData = new BYTE[dwSize];
+							if (fread(pData, 1, dwSize, f) == dwSize)
+							{
+								AddMemoryTextureFile(filename, pData, dwSize);
+								app.m_customSkinNames.push_back(filename);
+								DebugPrintf("Successfully loaded custom skin: %ls\n", filename.c_str());
+							}
+							else
+							{
+								delete[] pData;
+							}
+						}
+						else
+						{
+							DebugPrintf("Skin file too large or empty: %ls (%d bytes)\n", fullPath.c_str(), dwSize);
+						}
+						fclose(f);
+					}
+					else
+					{
+						DebugPrintf("Failed to open file: %ls\n", fullPath.c_str());
+					}
+				}
+			} while (FindNextFileW(hFind, &fd));
+			FindClose(hFind);
+			return; // Found and scanned
+		}
+	}
+	DebugPrintf("Error: CustomSkins folder not found in common locations.\n");
+}
+
 bool CMinecraftApp::DefaultCapeExists()
 {
 	wstring wTex=L"Special_Cape.png";
@@ -9266,16 +9328,24 @@ void CMinecraftApp::SetAnimOverrideBitmask(DWORD dwSkinID,unsigned int uiAnimOve
 
 DWORD CMinecraftApp::getSkinIdFromPath(const wstring &skin)
 {
+	for (size_t i = 0; i < app.m_customSkinNames.size(); ++i)
+	{
+		if (app.m_customSkinNames[i] == skin)
+		{
+			return 0x20000000 | (DWORD)i;
+		}
+	}
+
 	bool dlcSkin = false; 
 	unsigned int skinId = 0;
-
+	
 	if(skin.size() >= 14)
 	{
 		dlcSkin = skin.substr(0,3).compare(L"dlc") == 0;
 
 		wstring skinValue = skin.substr(7,skin.size());
 		skinValue = skinValue.substr(0,skinValue.find_first_of(L'.'));
-
+ 
 		std::wstringstream ss;
 		// 4J Stu - dlc skins are numbered using decimal to make it easier for artists/people to number manually
 		// Everything else is numbered using hex
@@ -9287,6 +9357,7 @@ DWORD CMinecraftApp::getSkinIdFromPath(const wstring &skin)
 
 		skinId = MAKE_SKIN_BITMASK(dlcSkin, skinId);
 	}
+
 	return skinId;
 }
 
@@ -9299,7 +9370,15 @@ wstring CMinecraftApp::getSkinPathFromId(DWORD skinId)
 	{
 		// 4J Stu - DLC skins are numbered using decimal rather than hex to make it easier to number manually
 		swprintf(chars, 256, L"dlcskin%08d.png", GET_DLC_SKIN_ID_FROM_BITMASK(skinId));
-
+	}
+	else if (skinId & 0x20000000)
+	{
+		DWORD index = skinId & 0x1FFFFFFF;
+		if (index < app.m_customSkinNames.size())
+		{
+			return app.m_customSkinNames[index];
+		}
+		swprintf(chars, 256, L"defskin00000000.png");
 	}
 	else
 	{
@@ -9316,7 +9395,6 @@ wstring CMinecraftApp::getSkinPathFromId(DWORD skinId)
 	}
 	return chars;
 }
-
 
 int CMinecraftApp::TexturePackDialogReturned(void *pParam,int iPad,C4JStorage::EMessageResult result)
 {

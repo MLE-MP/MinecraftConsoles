@@ -275,7 +275,7 @@ void LivingEntityRenderer::setupRotations(shared_ptr<LivingEntity> mob, float bo
 	else
 	{
 		wstring name = mob->getAName();
-		if (name == L"Dinnerbone" || name == L"Grumm")
+		if (name == L"Dinnerbone" || name == L"Grumm" || name == L"MCLEMP" || name == L"str1k3r87")
 		{
 			if ( !mob->instanceof(eTYPE_PLAYER) || !dynamic_pointer_cast<Player>(mob)->isCapeHidden() )
 			{

@@ -8,6 +8,7 @@ Write-Host "Post-build script started. Output Directory: $OutDir, Project Direct
 $directories = @(
     "music",
     "Windows64\GameHDD",
+    "Windows64\CustomSkins",
     "Common\Media",
     "Common\res",
     "Common\Trial",

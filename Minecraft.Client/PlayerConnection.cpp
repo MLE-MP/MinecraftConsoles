@@ -988,14 +988,7 @@ void PlayerConnection::handleTextureAndGeometryChange(shared_ptr<TextureAndGeome
 	}
 	else if(!packet->path.empty() && app.IsFileInMemoryTextures(packet->path))
 	{
-		// Update the ref count on the memory texture data
 		app.AddMemoryTextureFile(packet->path,NULL,0);
-
-		player->setCustomSkin(packet->dwSkinID);
-
-		// If we already have the texture, then we already have the model parts too
-		//app.SetAdditionalSkinBoxes(packet->dwSkinID,)
-		//DebugBreak();
 	}
 	server->getPlayers()->broadcastAll( shared_ptr<TextureAndGeometryChangePacket>( new TextureAndGeometryChangePacket(player,packet->path) ), player->dimension );
 }
