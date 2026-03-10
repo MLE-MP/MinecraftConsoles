@@ -626,6 +626,7 @@ void PlayerConnection::handleChat(shared_ptr<ChatPacket> packet)
 	}
 	wstring formatted = L"<" + player->name + L"> " + message;
 	server->getPlayers()->broadcastAll(shared_ptr<ChatPacket>(new ChatPacket(formatted)));
+	server->info(formatted);
 	chatSpamTickCount += SharedConstants::TICKS_PER_SECOND;
 	if (chatSpamTickCount > SharedConstants::TICKS_PER_SECOND * 10)
 	{
