@@ -1145,6 +1145,7 @@ static int RunHeadlessServer()
 		param->hellScale = HELL_LEVEL_SCALE_LARGE;
 		break;
 	}
+
 	
 	param->settings = app.GetGameHostOption(eGameHostOption_All);
 

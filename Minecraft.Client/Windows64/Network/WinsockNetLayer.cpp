@@ -163,6 +163,7 @@ void WinsockNetLayer::Shutdown()
 
 bool WinsockNetLayer::HostGame(int port, const char* bindIp) //updated
 {
+	if (Windows64Launcher::IsInOfflineMode()) return true;
 	if (!s_initialized && !Initialize()) return false;
 
 	s_isHost = true;
@@ -260,6 +261,7 @@ bool WinsockNetLayer::HostGame(int port, const char* bindIp) //updated
 
 bool WinsockNetLayer::JoinGame(const char* ip, int port)
 {
+	if (Windows64Launcher::IsInOfflineMode()) return true;
 	if (!s_initialized && !Initialize()) return false;
 
 	s_isHost = false;
@@ -792,6 +794,8 @@ DWORD WINAPI WinsockNetLayer::ClientRecvThreadProc(LPVOID param)
 
 bool WinsockNetLayer::StartAdvertising(int gamePort, const wchar_t* hostName, unsigned int gameSettings, unsigned int texPackId, unsigned char subTexId, unsigned short netVer)
 {
+	if (Windows64Launcher::IsInOfflineMode()) return true;
+
 	if (s_advertising) return true;
 	if (!s_initialized) return false;
 
@@ -926,6 +930,7 @@ DWORD WINAPI WinsockNetLayer::AdvertiseThreadProc(LPVOID param)
 
 bool WinsockNetLayer::StartDiscovery()
 {
+	if (Windows64Launcher::IsInOfflineMode()) return true;
 	if (s_discovering) return true;
 	if (!s_initialized) return false;
 

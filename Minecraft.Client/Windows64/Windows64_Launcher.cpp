@@ -68,7 +68,7 @@ bool shouldContinue = true;
 
 HWND hBottomBar;
 HWND hStatusText;
-HWND hBtnCancel;
+HWND hBtnOffline;
 HWND hBtnLaunch;
 
 HWND hBtnLogout;
@@ -89,6 +89,9 @@ std::string username = "";
 std::string authenticationToken = "";
 
 bool startedThread = false;
+
+bool offlinemode = false;
+bool Windows64Launcher::IsInOfflineMode() { return offlinemode; }
 
 void onSuccessfulLogin();
 void onLoginFailed();
@@ -164,6 +167,8 @@ void Windows64Launcher::CreateLauncherWindow(HINSTANCE hInstance, std::function<
 	RegisterLauncherClass(hInstance);
 	InitWindow(hInstance);
 
+	onLoginFailed(); //call this to disable login element during socket connection
+
 	AttemptFullLoginFlow();
 
 	MSG msg;
@@ -172,7 +177,7 @@ void Windows64Launcher::CreateLauncherWindow(HINSTANCE hInstance, std::function<
 		DispatchMessage(&msg);
 	}
 
-	// Now launcher is closed → continue
+	// Now launcher is closed -> continue
 	if (shouldContinue == false && onLaunch)
 		onLaunch();
 }
@@ -182,8 +187,7 @@ void AttemptFullLoginFlow() {
 		int responseState = Windows64Launcher::API_GetAccountInfo(authenticationToken);
 		if (responseState == 0) {
 			onSuccessfulLogin();
-		}
-		else {
+		} else {
 			onLoginFailed();
 			MessageBoxW(launcher_HWND, L"Unable To Connect To Saved Account", L"Login Failed", MB_OK);
 		}
@@ -198,7 +202,7 @@ void onSuccessfulLogin() {
 	SetWindowText(hLoginUsernameLabel, std::string("Welcome: " + username).c_str());
 
 	ShowWindow(hBtnLaunch, SW_SHOW);
-	ShowWindow(hBtnCancel, SW_SHOW);
+	ShowWindow(hBtnOffline, SW_SHOW);
 
 	ShowWindow(hBtnLogout, SW_SHOW);
 	ShowWindow(hLoginUsernameLabel, SW_SHOW);
@@ -221,7 +225,7 @@ void onSuccessfulLogin() {
 
 void onLoginFailed() {
 	ShowWindow(hBtnLaunch, SW_HIDE);
-	ShowWindow(hBtnCancel, SW_HIDE);
+	ShowWindow(hBtnOffline, SW_HIDE);
 
 	ShowWindow(hBtnLogout, SW_HIDE);
 	ShowWindow(hLoginUsernameLabel, SW_HIDE);
@@ -243,7 +247,7 @@ LRESULT OnWindowCreation(HWND hWnd) {
 	hStatusText = CreateWindowW(L"STATIC", L"Version: 0.2", WS_CHILD | WS_VISIBLE, 10, 10, 200, 20, hBottomBar, nullptr, nullptr, nullptr);
 
 	hBtnLaunch = CreateWindowW(L"BUTTON", L"Launch", WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON, 0, 0, 80, 25, hWnd, (HMENU)1, nullptr, nullptr);
-	hBtnCancel = CreateWindowW(L"BUTTON", L"Cancel", WS_CHILD | WS_VISIBLE, 0, 0, 80, 25, hWnd, (HMENU)2, nullptr, nullptr);
+	hBtnOffline = CreateWindowW(L"BUTTON", L"Play Offline", WS_CHILD | WS_VISIBLE, 0, 0, 80, 25, hWnd, (HMENU)2, nullptr, nullptr);
 
 	hBtnRegister = CreateWindowW(L"BUTTON", L"Register", WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON, 0, 0, 80, 25, hWnd, (HMENU)3, nullptr, nullptr);
 	hBtnLogin = CreateWindowW(L"BUTTON", L"Login", WS_CHILD | WS_VISIBLE, 0, 0, 80, 25, hWnd, (HMENU)4, nullptr, nullptr);
@@ -300,7 +304,7 @@ LRESULT OnWindowSize(int width, int height) {
 	MoveWindow(hBtnLogin, width - padding - buttonWidth, buttonY, buttonWidth, buttonHeight, TRUE);
 
 	MoveWindow(hBtnRegister, width - padding * 2 - buttonWidth * 2, buttonY, buttonWidth, buttonHeight, TRUE);
-	MoveWindow(hBtnCancel, width - padding * 2 - buttonWidth * 2, buttonY, buttonWidth, buttonHeight, TRUE);
+	MoveWindow(hBtnOffline, width - padding * 2 - buttonWidth * 2, buttonY, buttonWidth, buttonHeight, TRUE);
 
 	MoveWindow(hStatusText, padding, (barHeight - 20) / 2, 300, 20, TRUE);
 
@@ -340,8 +344,14 @@ LRESULT OnAccountRegister() {
 		Windows64Launcher::SaveAuthenticationData(authenticationToken, username);
 		AttemptFullLoginFlow();
 	}
-	else if (registerResponse == 1) { //username taken
-		MessageBoxW(launcher_HWND, L"Username Already Taken", L"Registraction Failed", MB_OK);
+	else if (registerResponse == 2222) {
+		MessageBoxW(launcher_HWND, L"Invalid Username Characters", L"Registraction Failed", MB_OK);
+	}
+	else if (registerResponse == 2233) {
+		MessageBoxW(launcher_HWND, L"Invalid Password Characters", L"Registraction Failed", MB_OK);
+	}
+	else if (registerResponse == 3333) {
+		MessageBoxW(launcher_HWND, L"Username Taken", L"Registraction Failed", MB_OK);
 	}
 	else { //unknown error, we will setup internal codes and have them logged here
 		MessageBoxW(launcher_HWND, std::wstring(L"Unknown Error: " + std::to_wstring(registerResponse)).c_str(), L"Registraction Failed", MB_OK);
@@ -373,7 +383,7 @@ LRESULT OnAccountLogin() {
 		Windows64Launcher::SaveAuthenticationData(authenticationToken, username);
 		AttemptFullLoginFlow();
 	}
-	else if (registerResponse == 1) { //invalid details
+	else if (registerResponse == 1111 || registerResponse == 2222) { //invalid details
 		MessageBoxW(launcher_HWND, L"Invalid Username / Password", L"Login Failed", MB_OK);
 	}
 	else if (registerResponse == 2) { //Banned
@@ -390,9 +400,12 @@ LRESULT OnCommandReceived(HWND hWnd, int type) {
 	switch (type) {
 	case 1: // Launch
 		shouldContinue = false;
+		offlinemode = false;
 		DestroyWindow(hWnd);
 		break;
-	case 2: // Cancel
+	case 2: // Offline
+		shouldContinue = false;
+		offlinemode = true;
 		DestroyWindow(hWnd);
 		break;
 	case 3: // Register
@@ -576,9 +589,11 @@ int Windows64Launcher::API_GetAccountInfo(const std::string token) {
 
 	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"/getAccountInfo", L"POST", token, headers);
 
+	if (response.status == 0) return -1;
+
 	if (response.status != 200) return (20000 + response.status);
 
-	if (response.body.find('-') == std::string::npos) return response.status;
+	if (response.body.find('-') == std::string::npos) return stoi(response.body);
 
 	username = response.body.erase(0, 1);
 
@@ -595,7 +610,7 @@ int Windows64Launcher::API_AttemptAccountRegister(const std::string _username, c
 
 	if (response.status != 200) return (20000 + response.status);
 
-	if (response.body.find('-') == std::string::npos) return response.status;
+	if (response.body.find('-') == std::string::npos) return stoi(response.body);
 
 	std::vector<std::string> splitData = split(response.body.erase(0, 1), ':');
 
@@ -616,7 +631,7 @@ int Windows64Launcher::API_AttemptAccountLogin(const std::string _username, cons
 
 	if (response.status != 200) return (20000 + response.status);
 
-	if (response.body.find('-') == std::string::npos) return response.status;
+	if (response.body.find('-') == std::string::npos) return stoi(response.body);
 
 	std::vector<std::string> splitData = split(response.body.erase(0, 1), ':');
 

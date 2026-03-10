@@ -22,6 +22,8 @@ public:
 	static int API_AttemptAccountRegister(const std::string username, const std::string password, std::string& tokenOut);
 	static int API_AttemptAccountLogin(const std::string username, const std::string password, std::string& tokenOut);
 
+	static bool IsInOfflineMode();
+
 	static std::vector<std::wstring> GetBannedUsersList();
 	static void SaveBannedUsersList(std::vector<std::wstring> bannedUsers);
 
