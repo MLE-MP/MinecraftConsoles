@@ -457,13 +457,13 @@ LRESULT OnCommandReceived(HWND hWnd, int type) {
 		if (fread(pngHeader, 1, 24, imgFile) == 24) {
 			int w = (pngHeader[16] << 24) | (pngHeader[17] << 16) | (pngHeader[18] << 8) | pngHeader[19];
 			int h = (pngHeader[20] << 24) | (pngHeader[21] << 16) | (pngHeader[22] << 8) | pngHeader[23];
-			if ((w == 64 && h == 64) || (w == 64 && h == 32))
+			if (w == 64 && h == 32)
 				validSize = true;
 		}
 		fclose(imgFile);
 
 		if (!validSize) {
-			MessageBoxW(hWnd, L"Skin must be 64x64 or 64x32.", L"Invalid Skin", MB_OK | MB_ICONERROR);
+			MessageBoxW(hWnd, L"Skin must be 64x32.", L"Invalid Skin", MB_OK | MB_ICONERROR);
 			break;
 		}
 

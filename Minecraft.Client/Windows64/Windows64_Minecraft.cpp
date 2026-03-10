@@ -1272,6 +1272,8 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 }
 
 void StartGame(Win64LaunchOptions launchOptions, bool nCmdShow) {
+	app.ScanAndLoadCustomSkins();
+
 	// Ensure uid.dat exists from startup in client mode (before any multiplayer/login path).
 	if (launchOptions.serverMode) {
 		std::string authenticationToken = "";

@@ -197,8 +197,6 @@ CMinecraftApp::CMinecraftApp()
 	InitializeCriticalSection(&csMemFilesLock);
 	InitializeCriticalSection(&csMemTPDLock);
 
-	ScanAndLoadCustomSkins();
-
 	InitializeCriticalSection(&m_saveNotificationCriticalSection);
 	m_saveNotificationDepth = 0;
 
