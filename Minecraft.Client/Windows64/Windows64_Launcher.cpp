@@ -14,6 +14,8 @@
 
 #include <windows.h>
 #include <shellapi.h>
+#include <winhttp.h>
+#include <commdlg.h>
 
 #include "discord_rpc.h"
 
@@ -74,6 +76,7 @@ HWND hBtnLaunch;
 HWND hBtnLogout;
 
 HWND hBtnDiscord;
+HWND hBtnImportSkin;
 
 HWND hBtnRegister;
 HWND hBtnLogin;
@@ -167,6 +170,8 @@ void Windows64Launcher::CreateLauncherWindow(HINSTANCE hInstance, std::function<
 	RegisterLauncherClass(hInstance);
 	InitWindow(hInstance);
 
+	CheckForUpdates();
+
 	onLoginFailed(); //call this to disable login element during socket connection
 
 	AttemptFullLoginFlow();
@@ -244,7 +249,7 @@ void onLoginFailed() {
 LRESULT OnWindowCreation(HWND hWnd) {
 	hBottomBar = CreateWindowW(L"STATIC", nullptr, WS_CHILD | WS_VISIBLE, 0, 0, 0, 0, hWnd, nullptr, nullptr, nullptr);
 
-	hStatusText = CreateWindowW(L"STATIC", L"Version: 0.2", WS_CHILD | WS_VISIBLE, 10, 10, 200, 20, hBottomBar, nullptr, nullptr, nullptr);
+	hStatusText = CreateWindowW(L"STATIC", L"Version: " L"" LAUNCHER_VERSION, WS_CHILD | WS_VISIBLE, 10, 10, 200, 20, hBottomBar, nullptr, nullptr, nullptr);
 
 	hBtnLaunch = CreateWindowW(L"BUTTON", L"Launch", WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON, 0, 0, 80, 25, hWnd, (HMENU)1, nullptr, nullptr);
 	hBtnOffline = CreateWindowW(L"BUTTON", L"Play Offline", WS_CHILD | WS_VISIBLE, 0, 0, 80, 25, hWnd, (HMENU)2, nullptr, nullptr);
@@ -255,6 +260,7 @@ LRESULT OnWindowCreation(HWND hWnd) {
 	hBtnLogout = CreateWindowW(L"BUTTON", L"Logout", WS_CHILD | WS_VISIBLE, 0, 0, 80, 25, hWnd, (HMENU)5, nullptr, nullptr);
 
 	hBtnDiscord = CreateWindowW(L"BUTTON", L"Discord", WS_CHILD | WS_VISIBLE, 0, 0, 80, 25, hWnd, (HMENU)6, nullptr, nullptr);
+	hBtnImportSkin = CreateWindowW(L"BUTTON", L"Import Skin", WS_CHILD | WS_VISIBLE, 0, 0, 90, 25, hWnd, (HMENU)7, nullptr, nullptr);
 
 	hUsernameLabel = CreateWindowW(L"STATIC", L"Username:", WS_CHILD | WS_VISIBLE, 0, 0, 80, 20, hWnd, nullptr, nullptr, nullptr);
 	hUsernameEdit = CreateWindowW(L"EDIT", L"", WS_CHILD | WS_VISIBLE | WS_BORDER | ES_AUTOHSCROLL, 0, 0, 180, 25, hWnd, nullptr, nullptr, nullptr);
@@ -279,6 +285,7 @@ LRESULT OnWindowSize(int width, int height) {
 	MoveWindow(hBtnLogout, 0, 30, labelWidth, 20, TRUE);
 
 	MoveWindow(hBtnDiscord, centerX, 125, labelWidth, 20, TRUE);
+	MoveWindow(hBtnImportSkin, centerX + labelWidth + 10, 125, 90, 20, TRUE);
 
 	// Username
 	MoveWindow(hUsernameLabel, centerX - labelWidth + 50, startY - 5, labelWidth, 20, TRUE);
@@ -420,8 +427,61 @@ LRESULT OnCommandReceived(HWND hWnd, int type) {
 		break;
 	case 6: //Discord
 	{
-
 		ShellExecute(0, 0, "https://discord.gg/xjc9JW4Bfp", 0, 0 , SW_SHOW );
+	}
+	break;
+	case 7: //Import Skin
+	{
+		wchar_t filePath[MAX_PATH] = { 0 };
+
+		OPENFILENAMEW ofn = {};
+		ofn.lStructSize = sizeof(ofn);
+		ofn.hwndOwner = hWnd;
+		ofn.lpstrFilter = L"PNG Files\0*.png\0";
+		ofn.lpstrFile = filePath;
+		ofn.nMaxFile = MAX_PATH;
+		ofn.lpstrTitle = L"Select a Skin";
+		ofn.Flags = OFN_FILEMUSTEXIST | OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR;
+
+		if (!GetOpenFileNameW(&ofn))
+			break;
+
+		FILE* imgFile = _wfopen(filePath, L"rb");
+		if (!imgFile) {
+			MessageBoxW(hWnd, L"Failed to open image file.", L"Import Error", MB_OK | MB_ICONERROR);
+			break;
+		}
+
+		unsigned char pngHeader[24];
+		bool validSize = false;
+		if (fread(pngHeader, 1, 24, imgFile) == 24) {
+			int w = (pngHeader[16] << 24) | (pngHeader[17] << 16) | (pngHeader[18] << 8) | pngHeader[19];
+			int h = (pngHeader[20] << 24) | (pngHeader[21] << 16) | (pngHeader[22] << 8) | pngHeader[23];
+			if ((w == 64 && h == 64) || (w == 64 && h == 32))
+				validSize = true;
+		}
+		fclose(imgFile);
+
+		if (!validSize) {
+			MessageBoxW(hWnd, L"Skin must be 64x64 or 64x32.", L"Invalid Skin", MB_OK | MB_ICONERROR);
+			break;
+		}
+
+		CreateDirectoryW(L"Windows64\\CustomSkins", NULL);
+
+		std::wstring fileName = filePath;
+		size_t lastSlash = fileName.find_last_of(L"\\//");
+		if (lastSlash != std::wstring::npos)
+			fileName = fileName.substr(lastSlash + 1);
+
+		std::wstring destPath = L"Windows64\\CustomSkins\\" + fileName;
+
+		if (!CopyFileW(filePath, destPath.c_str(), FALSE)) {
+			MessageBoxW(hWnd, L"Failed to copy skin file.", L"Import Error", MB_OK | MB_ICONERROR);
+			break;
+		}
+
+		MessageBoxW(hWnd, L"Skin imported! It will be available next time you launch the game.", L"Import Skin", MB_OK | MB_ICONINFORMATION);
 	}
 	break;
 	}
@@ -639,4 +699,242 @@ int Windows64Launcher::API_AttemptAccountLogin(const std::string _username, cons
 	authenticationToken = splitData[1];
 
 	return 0;
+}
+
+static std::string GitHubGet(const wchar_t* path) {
+	HINTERNET hSession = WinHttpOpen(L"MCLegacy-Updater/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+	if (!hSession) return "";
+
+	HINTERNET hConnect = WinHttpConnect(hSession, L"api.github.com", INTERNET_DEFAULT_HTTPS_PORT, 0);
+	if (!hConnect) { WinHttpCloseHandle(hSession); return ""; }
+
+	HINTERNET hRequest = WinHttpOpenRequest(hConnect, L"GET", path, NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_SECURE);
+	if (!hRequest) { WinHttpCloseHandle(hConnect); WinHttpCloseHandle(hSession); return ""; }
+
+	BOOL bResults = WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0, NULL, 0, 0, 0);
+	if (bResults) bResults = WinHttpReceiveResponse(hRequest, NULL);
+
+	std::string body;
+	if (bResults) {
+		DWORD dwSize = 0;
+		do {
+			dwSize = 0;
+			if (!WinHttpQueryDataAvailable(hRequest, &dwSize)) break;
+			if (dwSize == 0) break;
+			char* buf = new char[dwSize + 1];
+			DWORD dwRead = 0;
+			ZeroMemory(buf, dwSize + 1);
+			if (WinHttpReadData(hRequest, buf, dwSize, &dwRead))
+				body.append(buf, dwRead);
+			delete[] buf;
+		} while (dwSize > 0);
+	}
+
+	WinHttpCloseHandle(hRequest);
+	WinHttpCloseHandle(hConnect);
+	WinHttpCloseHandle(hSession);
+	return body;
+}
+
+static bool DownloadFile(const wchar_t* host, const wchar_t* path, const std::string& destPath) {
+	HINTERNET hSession = WinHttpOpen(L"MCLegacy-Updater/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+	if (!hSession) return false;
+
+	HINTERNET hConnect = WinHttpConnect(hSession, host, INTERNET_DEFAULT_HTTPS_PORT, 0);
+	if (!hConnect) { WinHttpCloseHandle(hSession); return false; }
+
+	HINTERNET hRequest = WinHttpOpenRequest(hConnect, L"GET", path, NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_SECURE);
+	if (!hRequest) { WinHttpCloseHandle(hConnect); WinHttpCloseHandle(hSession); return false; }
+
+	BOOL bResults = WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0, NULL, 0, 0, 0);
+	if (bResults) bResults = WinHttpReceiveResponse(hRequest, NULL);
+
+	if (!bResults) {
+		WinHttpCloseHandle(hRequest); WinHttpCloseHandle(hConnect); WinHttpCloseHandle(hSession);
+		return false;
+	}
+
+	DWORD dwStatusCode = 0;
+	DWORD dwSz = sizeof(dwStatusCode);
+	WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER, WINHTTP_HEADER_NAME_BY_INDEX, &dwStatusCode, &dwSz, WINHTTP_NO_HEADER_INDEX);
+
+	if (dwStatusCode == 301 || dwStatusCode == 302) {
+		DWORD dwBufLen = 0;
+		WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_LOCATION, WINHTTP_HEADER_NAME_BY_INDEX, NULL, &dwBufLen, WINHTTP_NO_HEADER_INDEX);
+		if (GetLastError() == ERROR_INSUFFICIENT_BUFFER && dwBufLen > 0) {
+			wchar_t* locBuf = new wchar_t[dwBufLen / sizeof(wchar_t) + 1];
+			if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_LOCATION, WINHTTP_HEADER_NAME_BY_INDEX, locBuf, &dwBufLen, WINHTTP_NO_HEADER_INDEX)) {
+				std::wstring location(locBuf);
+				delete[] locBuf;
+
+				WinHttpCloseHandle(hRequest);
+				WinHttpCloseHandle(hConnect);
+				WinHttpCloseHandle(hSession);
+
+				URL_COMPONENTS urlComp = {};
+				urlComp.dwStructSize = sizeof(urlComp);
+				wchar_t hostBuf[256] = {};
+				wchar_t pathBuf[2048] = {};
+				urlComp.lpszHostName = hostBuf;
+				urlComp.dwHostNameLength = 256;
+				urlComp.lpszUrlPath = pathBuf;
+				urlComp.dwUrlPathLength = 2048;
+
+				if (WinHttpCrackUrl(location.c_str(), (DWORD)location.length(), 0, &urlComp))
+					return DownloadFile(hostBuf, pathBuf, destPath);
+				return false;
+			}
+			delete[] locBuf;
+		}
+		WinHttpCloseHandle(hRequest); WinHttpCloseHandle(hConnect); WinHttpCloseHandle(hSession);
+		return false;
+	}
+
+	if (dwStatusCode != 200) {
+		WinHttpCloseHandle(hRequest); WinHttpCloseHandle(hConnect); WinHttpCloseHandle(hSession);
+		return false;
+	}
+
+	FILE* f = fopen(destPath.c_str(), "wb");
+	if (!f) {
+		WinHttpCloseHandle(hRequest); WinHttpCloseHandle(hConnect); WinHttpCloseHandle(hSession);
+		return false;
+	}
+
+	DWORD dwSize = 0;
+	do {
+		dwSize = 0;
+		if (!WinHttpQueryDataAvailable(hRequest, &dwSize)) break;
+		if (dwSize == 0) break;
+		char* buf = new char[dwSize];
+		DWORD dwRead = 0;
+		if (WinHttpReadData(hRequest, buf, dwSize, &dwRead))
+			fwrite(buf, 1, dwRead, f);
+		delete[] buf;
+	} while (dwSize > 0);
+
+	fclose(f);
+	WinHttpCloseHandle(hRequest);
+	WinHttpCloseHandle(hConnect);
+	WinHttpCloseHandle(hSession);
+	return true;
+}
+
+static std::string ExtractJsonString(const std::string& json, const std::string& key) {
+	std::string search = "\"" + key + "\"";
+	size_t pos = json.find(search);
+	if (pos == std::string::npos) return "";
+	pos = json.find("\"", pos + search.length() + 1);
+	if (pos == std::string::npos) return "";
+	pos++;
+	size_t end = json.find("\"", pos);
+	if (end == std::string::npos) return "";
+	return json.substr(pos, end - pos);
+}
+
+void Windows64Launcher::CheckForUpdates() {
+	SetWindowTextW(hStatusText, L"Checking for updates...");
+
+	std::string response = GitHubGet(L"/repos/mclemp/MinecraftConsoles/releases/latest");
+	if (response.empty()) {
+		SetWindowTextW(hStatusText, L"Version: " L"" LAUNCHER_VERSION L" (update check failed)");
+		return;
+	}
+
+	std::string latestTag = ExtractJsonString(response, "tag_name");
+	if (latestTag.empty()) {
+		SetWindowTextW(hStatusText, L"Version: " L"" LAUNCHER_VERSION);
+		return;
+	}
+
+	if (latestTag == LAUNCHER_VERSION) {
+		SetWindowTextW(hStatusText, L"Version: " L"" LAUNCHER_VERSION L" (up to date)");
+		return;
+	}
+
+	SetWindowTextW(hStatusText, L"Downloading update...");
+
+	std::string downloadUrl;
+	size_t assetsPos = response.find("\"assets\"");
+	if (assetsPos != std::string::npos) {
+		size_t searchFrom = assetsPos;
+		size_t urlPos = response.find("\"browser_download_url\"", searchFrom);
+		if (urlPos != std::string::npos) {
+			size_t valStart = response.find("\"", urlPos + 22);
+			if (valStart != std::string::npos) {
+				valStart++;
+				size_t valEnd = response.find("\"", valStart);
+				if (valEnd != std::string::npos)
+					downloadUrl = response.substr(valStart, valEnd - valStart);
+			}
+		}
+	}
+
+	if (downloadUrl.empty()) {
+		MessageBoxW(launcher_HWND, L"No downloadable asset found in the release.", L"Update Error", MB_OK | MB_ICONERROR);
+		SetWindowTextW(hStatusText, L"Version: " L"" LAUNCHER_VERSION);
+		return;
+	}
+
+	std::wstring wUrl(downloadUrl.begin(), downloadUrl.end());
+	URL_COMPONENTS urlComp = {};
+	urlComp.dwStructSize = sizeof(urlComp);
+	wchar_t hostBuf[256] = {};
+	wchar_t pathBuf[2048] = {};
+	urlComp.lpszHostName = hostBuf;
+	urlComp.dwHostNameLength = 256;
+	urlComp.lpszUrlPath = pathBuf;
+	urlComp.dwUrlPathLength = 2048;
+
+	if (!WinHttpCrackUrl(wUrl.c_str(), (DWORD)wUrl.length(), 0, &urlComp)) {
+		MessageBoxW(launcher_HWND, L"Failed to parse download URL.", L"Update Error", MB_OK | MB_ICONERROR);
+		SetWindowTextW(hStatusText, L"Version: " L"" LAUNCHER_VERSION);
+		return;
+	}
+
+	char tempPath[MAX_PATH];
+	GetTempPathA(MAX_PATH, tempPath);
+	std::string zipPath = std::string(tempPath) + "mclegacy_update.zip";
+
+	if (!DownloadFile(hostBuf, pathBuf, zipPath)) {
+		MessageBoxW(launcher_HWND, L"Failed to download update.", L"Update Error", MB_OK | MB_ICONERROR);
+		SetWindowTextW(hStatusText, L"Version: " L"" LAUNCHER_VERSION);
+		return;
+	}
+
+	SetWindowTextW(hStatusText, L"Installing update...");
+
+	char exePath[MAX_PATH] = {};
+	GetModuleFileNameA(NULL, exePath, MAX_PATH);
+
+	char exeDir[MAX_PATH] = {};
+	strcpy_s(exeDir, exePath);
+	char* pSlash = strrchr(exeDir, '\\');
+	if (pSlash) *(pSlash + 1) = '\0';
+
+	char batPath[MAX_PATH];
+	sprintf_s(batPath, "%smclegacy_update.bat", tempPath);
+
+	FILE* bat = fopen(batPath, "w");
+	if (!bat) {
+		MessageBoxW(launcher_HWND, L"Failed to create update script.", L"Update Error", MB_OK | MB_ICONERROR);
+		SetWindowTextW(hStatusText, L"Version: " L"" LAUNCHER_VERSION);
+		return;
+	}
+
+	fprintf(bat, "@echo off\n");
+	fprintf(bat, "echo Waiting for application to close...\n");
+	fprintf(bat, "timeout /t 2 /nobreak >nul\n");
+	fprintf(bat, "echo Extracting update...\n");
+	fprintf(bat, "powershell -Command \"Expand-Archive -Path '%s' -DestinationPath '%s' -Force\"\n", zipPath.c_str(), exeDir);
+	fprintf(bat, "echo Update complete. Restarting...\n");
+	fprintf(bat, "start \"\" \"%s\"\n", exePath);
+	fprintf(bat, "del \"%%~f0\"\n");
+	fclose(bat);
+
+	ShellExecuteA(NULL, "open", batPath, NULL, tempPath, SW_SHOW);
+
+	shouldContinue = true;
+	DestroyWindow(launcher_HWND);
+	ExitProcess(0);
 }

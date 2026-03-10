@@ -9,6 +9,8 @@ extern int g_autosaveInterval;
 
 extern bool g_doBoatBreak;
 
+#define LAUNCHER_VERSION "0.2"
+
 class Windows64Launcher {
 public:
 
@@ -30,5 +32,6 @@ public:
 	static const std::string& GetAuthenticationToken();
 	static const std::string& GetUsername();
 
+	static void CheckForUpdates();
 
 };
