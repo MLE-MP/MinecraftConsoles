@@ -1123,6 +1123,10 @@ static int RunHeadlessServer()
 
 	NetworkGameInitData* param = new NetworkGameInitData();
 	param->seed = serverSettings.getInt(L"seed", 0);
+
+#define LEVEL_WIDTH_EXTREME (LEVEL_WIDTH_LARGE * 2)
+
+	param->xzSize = LEVEL_WIDTH_EXTREME;
 	param->settings = app.GetGameHostOption(eGameHostOption_All);
 
 	wchar_t exePath[MAX_PATH] = {};
