@@ -32,33 +32,34 @@ private:
 	UIControl_BitmapIcon m_bitmapIcon, m_bitmapComparison;
 
 	UI_BEGIN_MAP_ELEMENTS_AND_NAMES(IUIScene_StartGame)
-		UI_MAP_ELEMENT(m_controlMainPanel, "MainPanel")
-		UI_BEGIN_MAP_CHILD_ELEMENTS(m_controlMainPanel)
-		UI_MAP_ELEMENT(m_labelWorldName, "WorldName")
-		UI_MAP_ELEMENT(m_editWorldName, "EditWorldName")
-		UI_MAP_ELEMENT(m_texturePackList, "TexturePackSelector")
-		UI_MAP_ELEMENT(m_buttonGamemode, "GameModeToggle")
-		UI_MAP_ELEMENT(m_checkboxOnline, "CheckboxOnline")
-		UI_MAP_ELEMENT(m_buttonMoreOptions, "MoreOptions")
-		UI_MAP_ELEMENT(m_buttonCreateWorld, "NewWorld")
-		UI_MAP_ELEMENT(m_sliderDifficulty, "Difficulty")
+		UI_MAP_ELEMENT( m_controlMainPanel, "MainPanel" )
+		UI_BEGIN_MAP_CHILD_ELEMENTS( m_controlMainPanel )
+			UI_MAP_ELEMENT( m_labelWorldName, "WorldName")
+			UI_MAP_ELEMENT( m_editWorldName, "EditWorldName")
+			UI_MAP_ELEMENT( m_texturePackList, "TexturePackSelector")
+			UI_MAP_ELEMENT( m_buttonGamemode, "GameModeToggle")
+			UI_MAP_ELEMENT( m_checkboxOnline, "CheckboxOnline")
+			UI_MAP_ELEMENT( m_buttonMoreOptions, "MoreOptions")
+			UI_MAP_ELEMENT( m_buttonCreateWorld, "NewWorld")
+			UI_MAP_ELEMENT( m_sliderDifficulty, "Difficulty")
 		UI_END_MAP_CHILD_ELEMENTS()
-		UI_END_MAP_ELEMENTS_AND_NAMES()
+	UI_END_MAP_ELEMENTS_AND_NAMES()
 
-		bool m_bGameModeCreative;
+	bool m_bGameModeCreative;
 	int m_iGameModeId;
 	bool m_bMultiplayerAllowed;
-	DLCPack* m_pDLCPack;
+	DLCPack * m_pDLCPack;
 	bool m_bRebuildTouchBoxes;
 
+
 public:
-	UIScene_CreateWorldMenu(int iPad, void* initData, UILayer* parentLayer);
+	UIScene_CreateWorldMenu(int iPad, void *initData, UILayer *parentLayer);
 	virtual ~UIScene_CreateWorldMenu();
 
 	virtual void updateTooltips();
 	virtual void updateComponents();
 
-	virtual EUIScene getSceneType() { return eUIScene_CreateWorldMenu; }
+	virtual EUIScene getSceneType() { return eUIScene_CreateWorldMenu;}
 
 	virtual void handleDestroy();
 	virtual void tick();
@@ -70,13 +71,17 @@ public:
 protected:
 	// TODO: This should be pure virtual in this class
 	virtual wstring getMoviePath();
-
+	
 	virtual void handleTimerComplete(int id);
 	virtual void handleGainFocus(bool navBack);
 
 public:
 	// INPUT
-	virtual void handleInput(int iPad, int key, bool repeat, bool pressed, bool released, bool& handled);
+	virtual void handleInput(int iPad, int key, bool repeat, bool pressed, bool released, bool &handled);
+#ifdef _WINDOWS64
+	virtual void getDirectEditInputs(vector<UIControl_TextInput*> &inputs);
+	virtual void onDirectEditFinished(UIControl_TextInput *input, UIControl_TextInput::EDirectEditResult result);
+#endif
 
 private:
 	void StartSharedLaunchFlow();
@@ -87,18 +92,18 @@ private:
 #endif
 
 protected:
-	static int KeyboardCompleteWorldNameCallback(LPVOID lpParam, const bool bRes);
+	static int KeyboardCompleteWorldNameCallback(LPVOID lpParam,const bool bRes);
 	void handlePress(F64 controlId, F64 childId);
 	void handleSliderMove(F64 sliderId, F64 currentValue);
-
+	
 	static void CreateGame(UIScene_CreateWorldMenu* pClass, DWORD dwLocalUsersMask);
-	static int ConfirmCreateReturned(void* pParam, int iPad, C4JStorage::EMessageResult result);
-	static int StartGame_SignInReturned(void* pParam, bool bContinue, int iPad);
-	static int MustSignInReturnedPSN(void* pParam, int iPad, C4JStorage::EMessageResult result);
+	static int ConfirmCreateReturned(void *pParam,int iPad,C4JStorage::EMessageResult result);
+	static int StartGame_SignInReturned(void *pParam,bool bContinue, int iPad);
+	static int MustSignInReturnedPSN(void *pParam,int iPad,C4JStorage::EMessageResult result);
 
 #ifdef __ORBIS__
 	//static int PSPlusReturned(void *pParam,int iPad,C4JStorage::EMessageResult result);
-	static int ContinueOffline(void* pParam, int iPad, C4JStorage::EMessageResult result);
+	static int ContinueOffline(void *pParam,int iPad,C4JStorage::EMessageResult result);
 #endif
 
 	virtual void checkStateAndStartGame();

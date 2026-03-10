@@ -16,10 +16,10 @@ UIControl_TextInput::UIControl_TextInput()
 #endif
 }
 
-bool UIControl_TextInput::setupControl(UIScene* scene, IggyValuePath* parent, const string& controlName)
+bool UIControl_TextInput::setupControl(UIScene *scene, IggyValuePath *parent, const string &controlName)
 {
 	UIControl::setControlType(UIControl::eTextInput);
-	bool success = UIControl_Base::setupControl(scene, parent, controlName);
+	bool success = UIControl_Base::setupControl(scene,parent,controlName);
 
 	//TextInput specific initialisers
 	m_textName = registerFastName(L"text");
@@ -46,20 +46,20 @@ void UIControl_TextInput::init(UIString label, int id)
 
 	value[1].type = IGGY_DATATYPE_number;
 	value[1].number = id;
-	IggyResult out = IggyPlayerCallMethodRS(m_parentScene->getMovie(), &result, getIggyValuePath(), m_initFunc, 2, value);
+	IggyResult out = IggyPlayerCallMethodRS ( m_parentScene->getMovie() , &result, getIggyValuePath() , m_initFunc , 2 , value );
 
-#ifdef __PSVITA__
-	// 4J-TomK - add this buttonlist to the vita touch box list
-
-	switch (m_parentScene->GetParentLayer()->m_iLayer)
-	{
-	case eUILayer_Fullscreen:
-	case eUILayer_Scene:
-	case eUILayer_HUD:
-		ui.TouchBoxAdd(this, m_parentScene);
-		break;
-	}
-#endif
+ #ifdef __PSVITA__
+ 	// 4J-TomK - add this buttonlist to the vita touch box list
+ 
+ 	switch(m_parentScene->GetParentLayer()->m_iLayer)
+ 	{
+ 	case eUILayer_Fullscreen:
+ 	case eUILayer_Scene:
+ 	case eUILayer_HUD:
+ 		ui.TouchBoxAdd(this,m_parentScene);
+ 		break;
+ 	}
+ #endif
 }
 
 void UIControl_TextInput::ReInit()
@@ -71,15 +71,15 @@ void UIControl_TextInput::ReInit()
 
 void UIControl_TextInput::setFocus(bool focus)
 {
-	if (m_bHasFocus != focus)
+	if(m_bHasFocus != focus)
 	{
 		m_bHasFocus = focus;
 
 		IggyDataValue result;
 		IggyDataValue value[1];
 		value[0].type = IGGY_DATATYPE_number;
-		value[0].number = focus ? 0 : 1;
-		IggyResult out = IggyPlayerCallMethodRS(m_parentScene->getMovie(), &result, getIggyValuePath(), m_funcChangeState, 1, value);
+		value[0].number = focus?0:1;
+		IggyResult out = IggyPlayerCallMethodRS ( m_parentScene->getMovie() , &result, getIggyValuePath() , m_funcChangeState , 1 , value );
 	}
 }
 
@@ -89,7 +89,7 @@ void UIControl_TextInput::SetCharLimit(int iLimit)
 	IggyDataValue value[1];
 	value[0].type = IGGY_DATATYPE_number;
 	value[0].number = iLimit;
-	IggyResult out = IggyPlayerCallMethodRS(m_parentScene->getMovie(), &result, getIggyValuePath(), m_funcSetCharLimit, 1, value);
+	IggyResult out = IggyPlayerCallMethodRS ( m_parentScene->getMovie() , &result, getIggyValuePath() , m_funcSetCharLimit , 1 , value );
 }
 
 void UIControl_TextInput::setCaretVisible(bool visible)
@@ -134,7 +134,7 @@ void UIControl_TextInput::setCaretIndex(int index)
 	IggyDataValue value[1];
 	value[0].type = IGGY_DATATYPE_number;
 	value[0].number = index;
-	IggyResult out = IggyPlayerCallMethodRS(m_parentScene->getMovie(), &result, getIggyValuePath(), m_funcSetCaretIndex, 1, value);
+	IggyResult out = IggyPlayerCallMethodRS ( m_parentScene->getMovie() , &result, getIggyValuePath() , m_funcSetCaretIndex , 1 , value );
 }
 
 #ifdef _WINDOWS64
@@ -165,13 +165,13 @@ UIControl_TextInput::EDirectEditResult UIControl_TextInput::tickDirectEdit()
 		return eDirectEdit_Continue;
 	}
 
-	// Enforce caret visibility and position every tick � setLabel() and Flash
+	// Enforce caret visibility and position every tick — setLabel() and Flash
 	// focus changes can reset both at any time.
 	setCaretVisible(true);
 	setCaretIndex(m_iCursorPos);
 
 	// For SWFs without m_mcCaret, insert '_' at the cursor position.
-	// All characters remain visible � '_' sits between them like a cursor.
+	// All characters remain visible — '_' sits between them like a cursor.
 	if (!m_bHasCaret)
 	{
 		wstring display = m_editBuffer;
@@ -195,7 +195,7 @@ UIControl_TextInput::EDirectEditResult UIControl_TextInput::tickDirectEdit()
 				changed = true;
 			}
 		}
-		else if (ch == 0x0D) // Enter � confirm edit
+		else if (ch == 0x0D) // Enter — confirm edit
 		{
 			m_bDirectEditing = false;
 			m_iDirectEditCooldown = 4;
@@ -238,7 +238,7 @@ UIControl_TextInput::EDirectEditResult UIControl_TextInput::tickDirectEdit()
 		changed = true;
 	}
 
-	// Escape � cancel edit and restore original text
+	// Escape — cancel edit and restore original text
 	if (g_KBMInput.IsKeyPressed(VK_ESCAPE))
 	{
 		m_editBuffer = m_textBeforeEdit;

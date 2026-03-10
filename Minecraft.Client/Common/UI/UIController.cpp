@@ -3,8 +3,8 @@
 #include "UI.h"
 #include "UIScene.h"
 #include "UIControl_Slider.h"
-#include "..\..\..\Minecraft.World\StringHelpers.h"
 #include "UIControl_TexturePackList.h"
+#include "..\..\..\Minecraft.World\StringHelpers.h"
 #include "..\..\LocalPlayer.h"
 #include "..\..\DLCTexturePack.h"
 #include "..\..\TexturePackRepository.h"
@@ -859,15 +859,15 @@ void UIController::tickInput()
 					if (mouseMoved)
 					{
 						m_bMouseHoverHorizontalList = false;
-						vector<UIControl*>* controls = pScene->GetControls();
+						vector<UIControl *> *controls = pScene->GetControls();
 						if (controls)
 						{
 							int hitControlId = -1;
 							S32 hitArea = INT_MAX;
-							UIControl* hitCtrl = NULL;
+							UIControl *hitCtrl = NULL;
 							for (size_t i = 0; i < controls->size(); ++i)
 							{
-								UIControl* ctrl = (*controls)[i];
+								UIControl *ctrl = (*controls)[i];
 								if (!ctrl || ctrl->getHidden() || !ctrl->getVisible() || ctrl->getId() < 0)
 									continue;
 
@@ -890,7 +890,7 @@ void UIController::tickInput()
 								// TexturePackList origin is where the slot area starts,
 								// not the top-left of the whole control — use GetRealHeight.
 								if (type == UIControl::eTexturePackList)
-									ch = ((UIControl_TexturePackList*)ctrl)->GetRealHeight();
+									ch = ((UIControl_TexturePackList *)ctrl)->GetRealHeight();
 								if (cw <= 0 || ch <= 0)
 									continue;
 
@@ -901,7 +901,7 @@ void UIController::tickInput()
 									{
 										// ButtonList manages focus internally via Flash —
 										// pass mouse coords so it can highlight the right item.
-										((UIControl_ButtonList*)ctrl)->SetTouchFocus(
+										((UIControl_ButtonList *)ctrl)->SetTouchFocus(
 											(S32)sceneMouseX, (S32)sceneMouseY, false);
 										hitControlId = -1;
 										hitArea = INT_MAX;
@@ -911,7 +911,7 @@ void UIController::tickInput()
 									if (type == UIControl::eTexturePackList)
 									{
 										// TexturePackList expects coords relative to its origin.
-										UIControl_TexturePackList* pList = (UIControl_TexturePackList*)ctrl;
+										UIControl_TexturePackList *pList = (UIControl_TexturePackList *)ctrl;
 										pScene->SetFocusToElement(ctrl->getId());
 										pList->SetTouchFocus(
 											(S32)(sceneMouseX - cx), (S32)(sceneMouseY - cy), false);
@@ -950,7 +950,7 @@ void UIController::tickInput()
 									// happens after both tickInput and scene tick, so no flicker.
 									if (hitCtrl && hitCtrl->getControlType() == UIControl::eTextInput)
 									{
-										((UIControl_TextInput*)hitCtrl)->setCaretVisible(false);
+										((UIControl_TextInput *)hitCtrl)->setCaretVisible(false);
 									}
 								}
 							}
@@ -971,12 +971,11 @@ void UIController::tickInput()
 						vector<UIControl *> *controls = pScene->GetControls();
 						if (controls)
 						{
-
 							// Set Iggy dispatch focus for TextInput on click (not hover)
 							// so ACTION_MENU_OK targets the correct text field.
 							for (size_t i = 0; i < controls->size(); ++i)
 							{
-								UIControl* ctrl = (*controls)[i];
+								UIControl *ctrl = (*controls)[i];
 								if (!ctrl || ctrl->getControlType() != UIControl::eTextInput || !ctrl->getVisible())
 									continue;
 								if (pMainPanel && ctrl->getParentPanel() != pMainPanel)
@@ -990,7 +989,7 @@ void UIController::tickInput()
 									sceneMouseX >= cx && sceneMouseX <= cx + cw &&
 									sceneMouseY >= cy && sceneMouseY <= cy + ch)
 								{
-									Iggy* movie = pScene->getMovie();
+									Iggy *movie = pScene->getMovie();
 									IggyFocusHandle currentFocus = IGGY_FOCUS_NULL;
 									IggyFocusableObject focusables[64];
 									S32 numFocusables = 0;
@@ -1065,10 +1064,10 @@ void UIController::tickInput()
 					}
 
 					// Let the scene handle mouse clicks for custom navigation (e.g. crafting slots)
-					//if (leftPressed && m_mouseDraggingSliderId < 0)
-					//{
-					//	m_mouseClickConsumedByScene = pScene->handleMouseClick(sceneMouseX, sceneMouseY);
-					//}
+					if (leftPressed && m_mouseDraggingSliderId < 0)
+					{
+						m_mouseClickConsumedByScene = pScene->handleMouseClick(sceneMouseX, sceneMouseY);
+					}
 				}
 			}
 #endif
@@ -1344,7 +1343,7 @@ void UIController::handleKeyPress(unsigned int iPad, unsigned int key)
 		// Right click → ACTION_MENU_X (pick up half stack in inventory)
 		if (key == ACTION_MENU_X && !g_KBMInput.IsMouseGrabbed())
 		{
-			if (g_KBMInput.IsMouseButtonPressed(KeyboardMouseInput::MOUSE_RIGHT)) { pressed = true; down = true; }
+			if (g_KBMInput.IsMouseButtonPressed(KeyboardMouseInput::MOUSE_RIGHT))  { pressed = true; down = true; }
 			if (g_KBMInput.IsMouseButtonReleased(KeyboardMouseInput::MOUSE_RIGHT)) { released = true; down = false; }
 			if (!pressed && !released && g_KBMInput.IsMouseButtonDown(KeyboardMouseInput::MOUSE_RIGHT)) { down = true; }
 		}

@@ -17,22 +17,26 @@ class UILayer;
 	virtual bool mapElementsAndNames() \
 	{ \
 		parentClass::mapElementsAndNames(); \
-		IggyValuePath *currentRoot = IggyPlayerRootPath ( getMovie() );
+		IggyValuePath *currentRoot = IggyPlayerRootPath ( getMovie() ); \
+		UIControl *_mapPanel = NULL;
 
 #define UI_END_MAP_ELEMENTS_AND_NAMES() \
 		return true; \
 	}
 
 #define UI_MAP_ELEMENT( var, name) \
-	{ var.setupControl(this, currentRoot , name ); m_controls.push_back(&var); }
+	{ var.setupControl(this, currentRoot , name ); var.m_pParentPanel = _mapPanel; m_controls.push_back(&var); }
 
 #define UI_BEGIN_MAP_CHILD_ELEMENTS( parent ) \
 	{ \
 		IggyValuePath *lastRoot = currentRoot; \
-		currentRoot = parent.getIggyValuePath();
+		UIControl *_lastPanel = _mapPanel; \
+		currentRoot = parent.getIggyValuePath(); \
+		_mapPanel = &parent;
 
 #define UI_END_MAP_CHILD_ELEMENTS() \
 		currentRoot = lastRoot; \
+		_mapPanel = _lastPanel; \
 	}
 
 #define UI_MAP_NAME( var, name ) \
@@ -41,15 +45,15 @@ class UILayer;
 class UIScene
 {
 	friend class UILayer;
-public:
-	IggyValuePath* m_rootPath;
+public:	
+	IggyValuePath *m_rootPath;
 
 private:
-	Iggy* swf;
+	Iggy *swf;
 	IggyName m_funcRemoveObject, m_funcSlideLeft, m_funcSlideRight, m_funcSetSafeZone, m_funcSetFocus, m_funcHorizontalResizeCheck;
 	IggyName m_funcSetAlpha;
 
-	ItemRenderer* m_pItemRenderer;
+	ItemRenderer *m_pItemRenderer;
 	unordered_map<wstring, IggyName> m_fastNames;
 	unordered_map<wstring, bool> m_registeredTextures;
 
@@ -59,14 +63,14 @@ private:
 		int targetTime;
 		bool running;
 	} TimerInfo;
-	unordered_map<int, TimerInfo> m_timers;
+	unordered_map<int,TimerInfo> m_timers;
 
 	int m_iFocusControl, m_iFocusChild;
 	float m_lastOpacity;
 	bool m_bUpdateOpacity;
 	bool m_bVisible;
 	bool m_bCanHandleInput;
-	UIScene* m_backScene;
+	UIScene *m_backScene;
 
 	size_t m_callbackUniqueId;
 
@@ -81,23 +85,23 @@ public:
 
 protected:
 	ESceneResolution m_loadedResolution;
-
+	
 	bool m_bIsReloading;
 	bool m_bFocussedOnce;
 
 	int m_movieWidth, m_movieHeight;
 	int m_renderWidth, m_renderHeight;
-	vector<UIControl*> m_controls;
+	vector<UIControl *> m_controls;
 
 protected:
-	UILayer* m_parentLayer;
+	UILayer *m_parentLayer;
 	bool bHasFocus;
 	int m_iPad;
 	bool m_hasTickedOnce;
 
 public:
-	virtual Iggy* getMovie() { return swf; }
-
+	virtual Iggy *getMovie() { return swf; }
+	
 	void destroyMovie();
 	virtual void reloadMovie(bool force = false);
 	virtual bool needsReloaded();
@@ -108,11 +112,11 @@ public:
 	int getRenderHeight() { return m_renderHeight; }
 
 #ifdef __PSVITA__
-	EUIGroup GetParentLayerGroup() { return m_parentLayer->m_parentGroup->GetGroup(); }
+	EUIGroup GetParentLayerGroup() {return m_parentLayer->m_parentGroup->GetGroup();}
 #endif
 #if defined(__PSVITA__) || defined(_WINDOWS64)
-	UILayer* GetParentLayer() { return m_parentLayer; }
-	vector<UIControl*>* GetControls() { return &m_controls; }
+	UILayer *GetParentLayer() {return m_parentLayer;}
+	vector<UIControl *> *GetControls() {return &m_controls;}
 #endif
 
 protected:
@@ -127,13 +131,13 @@ protected:
 	void loadMovie();
 
 private:
-	void getDebugMemoryUseRecursive(const wstring& moviePath, IggyMemoryUseInfo& memoryInfo);
+	void getDebugMemoryUseRecursive(const wstring &moviePath, IggyMemoryUseInfo &memoryInfo);
 
 public:
-	void PrintTotalMemoryUsage(__int64& totalStatic, __int64& totalDynamic);
+	void PrintTotalMemoryUsage(__int64 &totalStatic, __int64 &totalDynamic);
 
 public:
-	UIScene(int iPad, UILayer* parentLayer);
+	UIScene(int iPad, UILayer *parentLayer);
 	virtual ~UIScene();
 
 	virtual EUIScene getSceneType() = 0;
@@ -141,8 +145,7 @@ public:
 
 	virtual void tick();
 
-	IggyName registerFastName(const wstring& name);
-
+	IggyName registerFastName(const wstring &name);
 #if defined(__PSVITA__) || defined(_WINDOWS64)
 	void SetFocusToElement(int iID);
 #endif
@@ -166,7 +169,7 @@ public:
 
 	void gainFocus();
 	void loseFocus();
-
+	
 	virtual void updateTooltips();
 	virtual void updateComponents() {}
 	virtual void handleGainFocus(bool navBack);
@@ -185,19 +188,23 @@ public:
 	// Direct edit support: scenes override to register their text inputs.
 	// Base class handles tickDirectEdit in tick(), click-outside-to-deselect
 	// in handleMouseClick(), and provides isDirectEditBlocking() for guards.
-	virtual void getDirectEditInputs(vector<UIControl_TextInput*>& inputs) {}
-	virtual void onDirectEditFinished(UIControl_TextInput* input, UIControl_TextInput::EDirectEditResult result) {}
+	virtual void getDirectEditInputs(vector<UIControl_TextInput*> &inputs) {}
+	virtual void onDirectEditFinished(UIControl_TextInput *input, UIControl_TextInput::EDirectEditResult result) {}
 	bool isDirectEditBlocking();
+
+	// Mouse click dispatch. Hit-tests C++ controls and picks the smallest-area
+	// match, then calls handlePress. Override for custom behaviour (e.g. crafting).
+	virtual bool handleMouseClick(F32 x, F32 y);
 #endif
 
-	void removeControl(UIControl_Base* control, bool centreScene);
+	void removeControl( UIControl_Base *control, bool centreScene);
 	void slideLeft();
 	void slideRight();
 
 	// RENDERING
 	virtual void render(S32 width, S32 height, C4JRender::eViewportType viewpBort);
 
-	virtual void customDraw(IggyCustomDrawCallbackRegion* region);
+	virtual void customDraw(IggyCustomDrawCallbackRegion *region);
 
 	void setOpacity(float percent);
 	void setVisible(bool visible);
@@ -205,30 +212,30 @@ public:
 
 protected:
 	//void customDrawSlotControl(IggyCustomDrawCallbackRegion *region, int iPad, int iID, int iCount, int iAuxVal, float fAlpha, bool isFoil, bool bDecorations);
-	void customDrawSlotControl(IggyCustomDrawCallbackRegion* region, int iPad, shared_ptr<ItemInstance> item, float fAlpha, bool isFoil, bool bDecorations);
-
+	void customDrawSlotControl(IggyCustomDrawCallbackRegion *region, int iPad, shared_ptr<ItemInstance> item, float fAlpha, bool isFoil, bool bDecorations);
+	
 	bool m_cacheSlotRenders;
 	bool m_needsCacheRendered;
 	int m_expectedCachedSlotCount;
 private:
 	typedef struct _CachedSlotDrawData
 	{
-		CustomDrawData* customDrawRegion;
+		CustomDrawData *customDrawRegion;
 		shared_ptr<ItemInstance> item;
 		float fAlpha;
 		bool isFoil;
 		bool bDecorations;
 	} CachedSlotDrawData;
-	vector<CachedSlotDrawData*> m_cachedSlotDraw;
+	vector<CachedSlotDrawData *> m_cachedSlotDraw;
 
-	void _customDrawSlotControl(CustomDrawData* region, int iPad, shared_ptr<ItemInstance> item, float fAlpha, bool isFoil, bool bDecorations, bool usingCommandBuffer);
+	void _customDrawSlotControl(CustomDrawData *region, int iPad, shared_ptr<ItemInstance> item, float fAlpha, bool isFoil, bool bDecorations, bool usingCommandBuffer);
 
 public:
 	// INPUT
 	bool canHandleInput() { return m_bCanHandleInput; }
 	virtual bool allowRepeat(int key);
-	virtual void handleInput(int iPad, int key, bool repeat, bool pressed, bool released, bool& handled) {}
-	void externalCallback(IggyExternalFunctionCallUTF16* call);
+	virtual void handleInput(int iPad, int key, bool repeat, bool pressed, bool released, bool &handled) {}
+	void externalCallback(IggyExternalFunctionCallUTF16 * call);
 
 	virtual void handleDestroy() {}
 protected:
@@ -252,7 +259,7 @@ private:
 
 public:
 	bool controlHasFocus(int iControlId);
-	bool controlHasFocus(UIControl_Base* control);
+	bool controlHasFocus(UIControl_Base *control);
 	int getControlFocus();
 	int getControlChildFocus();
 
@@ -262,18 +269,18 @@ protected:
 	void navigateBack();
 
 public:
-	void setBackScene(UIScene* scene);
-	UIScene* getBackScene();
+	void setBackScene(UIScene *scene);
+	UIScene *getBackScene();
 	virtual void HandleDLCMountingComplete() {}
 	virtual void HandleDLCInstalled() {}
 #ifdef _XBOX_ONE
 	virtual void HandleDLCLicenseChange() {}
 #endif
 
-	virtual void HandleMessage(EUIMessage message, void* data);
+	virtual void HandleMessage(EUIMessage message, void *data);
 
-	void registerSubstitutionTexture(const wstring& textureName, PBYTE pbData, DWORD dwLength, bool deleteData = false);
-	bool hasRegisteredSubstitutionTexture(const wstring& textureName);
+	void registerSubstitutionTexture(const wstring &textureName, PBYTE pbData, DWORD dwLength, bool deleteData = false);
+	bool hasRegisteredSubstitutionTexture(const wstring &textureName);
 
 	virtual void handleUnlockFullVersion() {}
 

@@ -38,7 +38,7 @@ protected:
 	bool m_bHidden; // set by the Remove call
 
 public:
-	UIControl* m_pParentPanel; // set by UI_MAP_ELEMENT macro during mapElementsAndNames
+	UIControl *m_pParentPanel; // set by UI_MAP_ELEMENT macro during mapElementsAndNames
 
 	void setControlType(eUIControlType eType) {m_eControlType=eType;}
 	eUIControlType getControlType() {return m_eControlType;}
