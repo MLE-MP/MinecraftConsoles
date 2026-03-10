@@ -129,6 +129,7 @@ public:
 	DWORD m_texturePackId;
 
 public:
+	bool IsUsernameBanned(std::wstring name);
 	MinecraftServer();
 	~MinecraftServer();
 private:

@@ -322,11 +322,11 @@ void PlayerConnection::handleMovePlayer(shared_ptr<MovePlayerPacket> packet)
 			//            logger.warning(player->name + " moved wrongly!");
 			//            System.out.println("Got position " + xt + ", " + yt + ", " + zt);
 			//            System.out.println("Expected " + player->x + ", " + player->y + ", " + player->z);
-#ifndef _CONTENT_PACKAGE
+//#ifndef _CONTENT_PACKAGE
 			wprintf(L"%ls moved wrongly!\n",player->name.c_str());
 			app.DebugPrintf("Got position %f, %f, %f\n", xt,yt,zt);
 			app.DebugPrintf("Expected %f, %f, %f\n", player->x, player->y, player->z);
-#endif
+//#endif
 		}
 		player->absMoveTo(xt, yt, zt, yRotT, xRotT);
 
@@ -346,9 +346,9 @@ void PlayerConnection::handleMovePlayer(shared_ptr<MovePlayerPacket> packet)
 				if (aboveGroundTickCount > 80)
 				{
 					//                    logger.warning(player->name + " was kicked for floating too long!");
-#ifndef _CONTENT_PACKAGE
+//#ifndef _CONTENT_PACKAGE
 					wprintf(L"%ls was kicked for floating too long!\n", player->name.c_str());
-#endif
+//#endif
 					disconnect(DisconnectPacket::eDisconnect_NoFlying);
 					return;
 				}

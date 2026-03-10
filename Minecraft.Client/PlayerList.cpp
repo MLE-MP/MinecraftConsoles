@@ -34,6 +34,10 @@
 #include "Common\Network\Sony\NetworkPlayerSony.h"
 #endif
 
+#if defined(_WINDOWS64)
+#include <Windows64/Network/WinsockNetLayer.h>
+#endif
+
 // 4J - this class is fairly substantially altered as there didn't seem any point in porting code for banning, whitelisting, ops etc.
 
 PlayerList::PlayerList(MinecraftServer *server)

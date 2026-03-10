@@ -1124,9 +1124,25 @@ static int RunHeadlessServer()
 	NetworkGameInitData* param = new NetworkGameInitData();
 	param->seed = serverSettings.getInt(L"seed", 0);
 
-#define LEVEL_WIDTH_EXTREME (LEVEL_WIDTH_LARGE * 2)
-
-	param->xzSize = LEVEL_WIDTH_EXTREME;
+	switch (worldSize_int) {
+	case 1:
+		param->xzSize = LEVEL_WIDTH_CLASSIC;
+		param->hellScale = HELL_LEVEL_SCALE_CLASSIC;
+		break;
+	case 2:
+		param->xzSize = LEVEL_WIDTH_SMALL;
+		param->hellScale = HELL_LEVEL_SCALE_SMALL;
+		break;
+	case 3:
+		param->xzSize = LEVEL_WIDTH_MEDIUM;
+		param->hellScale = HELL_LEVEL_SCALE_MEDIUM;
+		break;
+	case 4:
+		param->xzSize = LEVEL_WIDTH_LARGE;
+		param->hellScale = HELL_LEVEL_SCALE_LARGE;
+		break;
+	}
+	
 	param->settings = app.GetGameHostOption(eGameHostOption_All);
 
 	wchar_t exePath[MAX_PATH] = {};

@@ -94,6 +94,64 @@ void onSuccessfulLogin();
 void onLoginFailed();
 void AttemptFullLoginFlow();
 
+std::vector<std::wstring> Windows64Launcher::GetBannedUsersList() {
+	wchar_t exePath[MAX_PATH] = {};
+	GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+	wchar_t* lastSlash = wcsrchr(exePath, L'\\');
+	if (lastSlash)
+	{
+		*(lastSlash + 1) = L'\0';
+	}
+
+	wchar_t filePath[MAX_PATH] = {};
+	_snwprintf_s(filePath, MAX_PATH, _TRUNCATE, L"%sWindows64\\GameHDD\\banned_players.txt", exePath);
+
+	std::vector<std::wstring> banned;
+
+	std::wifstream file(filePath);
+
+	if (!file.is_open())
+		return banned;
+
+	std::wstring line;
+	while (std::getline(file, line))
+	{
+		if (!line.empty())
+			banned.push_back(line);
+	}
+
+	file.close();
+
+	return banned;
+}
+
+void Windows64Launcher::SaveBannedUsersList(std::vector<std::wstring> bannedUsers) {
+	wchar_t exePath[MAX_PATH] = {};
+	GetModuleFileNameW(NULL, exePath, MAX_PATH);
+
+	wchar_t* lastSlash = wcsrchr(exePath, L'\\');
+	if (lastSlash)
+	{
+		*(lastSlash + 1) = L'\0';
+	}
+
+	wchar_t filePath[MAX_PATH] = {};
+	_snwprintf_s(filePath, MAX_PATH, _TRUNCATE, L"%sWindows64\\GameHDD\\banned_players.txt", exePath);
+
+	std::wofstream file(filePath, std::ios::out | std::ios::trunc);
+
+	if (!file.is_open())
+		return;
+
+	for (const auto& name : bannedUsers)
+	{
+		file << name << L"\n";
+	}
+
+	file.close();
+}
+
 const std::string& Windows64Launcher::GetAuthenticationToken() {
 	return authenticationToken;
 }

@@ -31,6 +31,7 @@ private:
 
 	// 4J Added
 	vector<PlayerUID> m_bannedXuids;
+
 	deque<BYTE> m_smallIdsToKick;
 	CRITICAL_SECTION m_kickPlayersCS;
 	deque<BYTE> m_smallIdsToClose;

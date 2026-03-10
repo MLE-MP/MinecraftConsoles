@@ -169,7 +169,7 @@ void PendingConnection::handleLogin(shared_ptr<LoginPacket> packet)
 	{
 		// Do nothing
 	}
-	else if( server->getPlayers()->isXuidBanned( packet->m_onlineXuid ) )
+	else if( server->getPlayers()->isXuidBanned( packet->m_onlineXuid ) || server->IsUsernameBanned(packet->userName) )
 	{
 		disconnect(DisconnectPacket::eDisconnect_Banned);
 	}

@@ -68,6 +68,10 @@
 #endif
 #define DEBUG_SERVER_DONT_SPAWN_MOBS 0
 
+#include <string>
+#include <algorithm>
+#include <cwctype>
+
 //4J Added
 MinecraftServer *MinecraftServer::server = NULL;
 bool MinecraftServer::setTimeAtEndOfTick = false;
@@ -175,6 +179,25 @@ static void SetAllLevelTimes(MinecraftServer *server, int value)
 		}
 	}
 }
+/*
+std::wstring toLower(const std::wstring& input)
+{
+	std::wstring result = input;
+
+	std::transform(result.begin(), result.end(), result.begin(),
+		[](wchar_t c) { return std::towlower(c); });
+
+	return result;
+}*/
+
+std::vector<std::wstring> savedBannedUsers;
+
+bool MinecraftServer::IsUsernameBanned(std::wstring name) {
+	for (std::wstring username : savedBannedUsers) {
+		if (username == name) return true;
+	}
+	return false;
+}
 
 static bool ExecuteConsoleCommand(MinecraftServer *server, const wstring &rawCommand)
 {
@@ -199,12 +222,108 @@ static bool ExecuteConsoleCommand(MinecraftServer *server, const wstring &rawCom
 
 	if (action == L"help" || action == L"?")
 	{
-		server->info(L"Commands: help, stop, list, say <message>, save-all, time <set day|night|ticks|add ticks>, weather <clear|rain|thunder> [seconds], tp <player> <target>, give <player> <itemId> [amount] [aux], enchant <player> <enchantId> [level], kill <player>");
+		server->info(L"Commands: help, stop, list, say <message>, kick <player name>, ban <player name>, pardon <player name>, save-game, time <set day|night|ticks|add ticks>, weather <clear|rain|thunder> [seconds], tp <player> <target>, give <player> <itemId> [amount] [aux], enchant <player> <enchantId> [level], kill <player>");
+		return true;
+	}
+
+	if (action == L"kick") {
+		if (server->getPlayers() == NULL) return true;
+		//disabled tolower calls cause of security
+		shared_ptr<ServerPlayer> selectedPlayer = nullptr;
+		std::wstring playerToLookFor = tokens[1];//toLower(tokens[1]);
+		for (shared_ptr<ServerPlayer> player : server->getPlayers()->players) {
+			//if (toLower(player->name) == playerToLookFor) {
+			if (player->name == playerToLookFor) {
+				selectedPlayer = player;
+				break;
+			}
+		}
+
+		if (selectedPlayer == nullptr) {
+			std::wstring message = L"Unable To Find Player To Kick: \"";
+			message += tokens[1];
+			message += L"\"";
+
+			server->info(message);
+			return true;
+		}
+
+		server->info(L"Successfully Kicked Player");
+
+		//if we kick player and they rejoin after trusted players is turned off they wont be automatically trusted
+		selectedPlayer->enableAllPlayerPrivileges(false);
+		selectedPlayer->connection->setWasKicked();
+		selectedPlayer->connection->send(shared_ptr<DisconnectPacket>(new DisconnectPacket(DisconnectPacket::eDisconnect_Kicked)));
+		return true;
+	}
+
+	if (action == L"ban") {
+		if (server->getPlayers() == NULL) return true;
+		//disabled tolower calls cause of security
+		shared_ptr<ServerPlayer> selectedPlayer = nullptr;
+		std::wstring playerToLookFor = tokens[1];//toLower(tokens[1]);
+		for (shared_ptr<ServerPlayer> player : server->getPlayers()->players) {
+			//if (toLower(player->name) == playerToLookFor) {
+			if (player->name == playerToLookFor) {
+				selectedPlayer = player;
+				break;
+			}
+		}
+
+		if (selectedPlayer == nullptr) {
+			std::wstring message = L"Unable To Find Player To Ban: \"";
+			message += tokens[1];
+			message += L"\"";
+
+			server->info(message);
+			return true;
+		}
+
+		server->info(L"Successfully Banned Player");
+
+		savedBannedUsers.push_back(selectedPlayer->name);
+
+		//if we kick player and they rejoin after trusted players is turned off they wont be automatically trusted
+		selectedPlayer->enableAllPlayerPrivileges(false);
+		selectedPlayer->connection->setWasKicked();
+		selectedPlayer->connection->send(shared_ptr<DisconnectPacket>(new DisconnectPacket(DisconnectPacket::eDisconnect_Banned)));
+		return true;
+	}
+
+	if (action == L"pardon") {
+		std::wstring playerToLookFor = tokens[1];
+
+		bool found = false;
+
+		for (auto it = savedBannedUsers.begin(); it != savedBannedUsers.end(); ++it)
+		{
+			if (*it == playerToLookFor)
+			{
+				savedBannedUsers.erase(it);
+				found = true;
+				break;
+			}
+		}
+
+		if (!found)
+		{
+			std::wstring message = L"Unable To Find Player To Pardon: \"";
+			message += playerToLookFor;
+			message += L"\"";
+
+			server->info(message);
+			return true;
+		}
+
+		server->info(L"Successfully Pardoned Player");
+
+		Windows64Launcher::SaveBannedUsersList(savedBannedUsers);
+
 		return true;
 	}
 
 	if (action == L"stop")
-	{
+	{ 
 		server->info(L"Stopping server...");
 		MinecraftServer::HaltServer();
 		return true;
@@ -235,12 +354,9 @@ static bool ExecuteConsoleCommand(MinecraftServer *server, const wstring &rawCom
 		return true;
 	}
 
-	if (action == L"save-all")
+	if (action == L"save-game")
 	{
-		if (playerList != NULL)
-		{
-			playerList->saveAll(NULL, false);
-		}
+		app.SetXuiServerAction(ProfileManager.GetPrimaryPad(), eXuiServerAction_SaveGame);
 		server->info(L"World saved.");
 		return true;
 	}
@@ -618,6 +734,10 @@ bool MinecraftServer::initServer(__int64 seed, NetworkGameInitData *initData, DW
 	logger.info("Loading properties");
 #endif
 	settings = new Settings(new File(L"server.properties"));
+
+#ifdef _WINDOWS64
+	savedBannedUsers = Windows64Launcher::GetBannedUsersList();
+#endif
 
 	app.SetGameHostOption(eGameHostOption_Difficulty, GetDedicatedServerInt(settings, L"difficulty", app.GetGameHostOption(eGameHostOption_Difficulty)));
 	app.SetGameHostOption(eGameHostOption_GameType, GetDedicatedServerInt(settings, L"gamemode", app.GetGameHostOption(eGameHostOption_GameType)));
@@ -1722,6 +1842,8 @@ void MinecraftServer::run(__int64 seed, void *lpParameter)
 		Minecraft *pMinecraft = Minecraft::GetInstance();
 		LevelData *pLevelData=levelNormalDimension->getLevelData();
 
+		server->setSaveOnExit(true);
+
 		if(pLevelData && pLevelData->getHasStronghold()==false)
 		{
 			int x,z;
@@ -1737,19 +1859,49 @@ void MinecraftServer::run(__int64 seed, void *lpParameter)
 		__int64 unprocessedTime = 0;
 
 		extern int g_autosaveInterval;
-		__int64 computedInterval = ((_int64)(g_autosaveInterval) * 1000);
+
+		__int64 computedInterval = ((__int64)g_autosaveInterval * 1000);
 		__int64 lastSaveTime = lastTime;
+
+		bool firstWarn, secondWarn = false;
 
 		while (running && !s_bServerHalted)
 		{
 			__int64 now = getCurrentTimeMillis();
-			if (g_Win64DedicatedServer) {
-				if (now - lastSaveTime > computedInterval) {
+			if (g_Win64DedicatedServer)
+			{
+				__int64 elapsed = now - lastSaveTime;
+				__int64 remaining = computedInterval - elapsed;
+
+				PlayerList* playerList = server->getPlayerList();
+
+				if (playerList != nullptr)
+				{
+					if (!firstWarn && remaining <= 10000 && computedInterval > 10000)
+					{
+						playerList->broadcastAll(std::make_shared<ChatPacket>(L"[Server] Autosave in 10 seconds."));
+						firstWarn = true;
+					}
+
+					if (!secondWarn && remaining <= 5000 && computedInterval > 5000)
+					{
+						playerList->broadcastAll(std::make_shared<ChatPacket>(L"[Server] Autosave in 5 seconds."));
+						secondWarn = true;
+					}
+				}
+
+				if (elapsed >= computedInterval)
+				{
+					if (playerList != nullptr)
+						playerList->broadcastAll(std::make_shared<ChatPacket>(L"[Server] Saving world..."));
+
 					app.SetXuiServerAction(ProfileManager.GetPrimaryPad(), eXuiServerAction_AutoSaveGame);
+
 					lastSaveTime = now;
+					firstWarn = false;
+					secondWarn = false;
 				}
 			}
-			
 
 			// 4J Stu - When we pause the server, we don't want to count that as time passed
 			// 4J Stu - TU-1 hotifx - Remove this line. We want to make sure that we tick connections at the proper rate when paused
@@ -1902,7 +2054,11 @@ void MinecraftServer::run(__int64 seed, void *lpParameter)
 						players->saveAll(Minecraft::GetInstance()->progressRenderer);
 					}
 
-					players->broadcastAll( shared_ptr<UpdateProgressPacket>( new UpdateProgressPacket(20) ) );
+					players->broadcastAll(shared_ptr<UpdateProgressPacket>(new UpdateProgressPacket(20)));
+
+					Windows64Launcher::SaveBannedUsersList(savedBannedUsers); //if we have a lot of banned players this could take a moment
+
+					players->broadcastAll(shared_ptr<UpdateProgressPacket>(new UpdateProgressPacket(25)));
 
 					for (unsigned int j = 0; j < levels.length; j++)
 					{
