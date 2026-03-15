@@ -368,7 +368,7 @@ void UIScene_MainMenu::handlePress(F64 controlId, F64 childId)
 			UINT uiIDA[2];
 			uiIDA[0]=IDS_CANCEL;
 			uiIDA[1]=IDS_OK;
-			ui.RequestErrorMessage(IDS_WARNING_ARCADE_TITLE, IDS_WARNING_ARCADE_TEXT, uiIDA, 2, XUSER_INDEX_ANY,&UIScene_MainMenu::ExitGameReturned,this);
+			ui.RequestErrorMessage(IDS_WINDOWS_EXIT, IDS_WARNING_ARCADE_TEXT, uiIDA, 2, XUSER_INDEX_ANY,&UIScene_MainMenu::ExitGameReturned,this);
 		}
 		else
 		{
