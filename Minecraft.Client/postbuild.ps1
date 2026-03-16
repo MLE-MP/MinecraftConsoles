@@ -12,8 +12,6 @@ $directories = @(
     "Windows64Media\Music",
     "Common\Media",
     "Common\res",
-    "Common\Trial",
-    "Common\Tutorial",
     "Windows64Media"
 )
 
@@ -25,11 +23,11 @@ $copies = @(
     @{ Source = "Music";           Dest = "Windows64Media\Music" },
     @{ Source = "Common\Media";    Dest = "Common\Media" },
     @{ Source = "Common\res";      Dest = "Common\res" },
-    @{ Source = "Common\Trial";    Dest = "Common\Trial" },
-    @{ Source = "Common\Tutorial"; Dest = "Common\Tutorial" },
     @{ Source = "Windows64\GameHDD"; Dest = "Windows64\GameHDD" },
-    @{ Source = "Windows64\Sound";  Dest = "Windows64\Sound" },
-    @{ Source = "Windows64Media";  Dest = "Windows64Media" }
+    @{ Source = "Windows64Media/DLC";  Dest = "Windows64Media/DLC" },
+    @{ Source = "Windows64Media/Music";  Dest = "Windows64Media/Music" },
+    @{ Source = "Windows64Media/Sound";  Dest = "Windows64Media/Sound" },
+    @{ Source = "Windows64Media/Tutorial";  Dest = "Windows64Media/Tutorial" }
 )
 
 foreach ($copy in $copies) {
@@ -40,4 +38,24 @@ foreach ($copy in $copies) {
         # Copy the files using xcopy, forcing overwrite and suppressing errors, and only copying if the source is newer than the destination
 		xcopy /q /y /i /s /e /d "$src" "$dst" 2>$null
     }
+}
+
+$deleteDirs = @(
+    "Common\Media\Sound",
+    "Common\Media\Graphics",
+    "Common\Media\font"
+)
+
+foreach ($dir in $deleteDirs) {
+    $path = Join-Path $OutDir $dir
+    if (Test-Path $path) {
+        Remove-Item $path -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+$delDir = Join-Path $OutDir "Common\Media"
+
+if (Test-Path $delDir) {
+    Get-ChildItem -Path "$delDir\*" -Recurse -Include *.swf,*.txt,*.resx,*.xml,*.loc,*.lang,*.col -File |
+        Remove-Item -Force -ErrorAction SilentlyContinue
 }
