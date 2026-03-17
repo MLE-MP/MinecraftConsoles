@@ -410,7 +410,11 @@ bool EnderMan::hurt(DamageSource *source, float damage)
 
 	if ( dynamic_cast<EntityDamageSource *>(source) != NULL && source->getEntity()->instanceof(eTYPE_PLAYER))
 	{
-		aggroedByPlayer = true;
+		if (!dynamic_pointer_cast<Player>(source->getEntity())->abilities.invulnerable)
+		{
+			aggroedByPlayer = true;
+		}
+		else setCreepy(false);
 	}
 
 	if (dynamic_cast<IndirectEntityDamageSource *>(source) != NULL)

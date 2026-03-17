@@ -1652,18 +1652,19 @@ void LevelChunk::getEntities(shared_ptr<Entity> except, AABB *bb, vector<shared_
 
 		for (auto& e : *entities)
 		{
-			if ( e && e != except && e->bb->intersects(bb) && (selector == NULL || selector->matches(e)))
+			if (e && e != except && e->bb->intersects(bb) && (selector == nullptr || selector->matches(e)))
 			{
 				es.push_back(e);
+
 				vector<shared_ptr<Entity> > *subs = e->getSubEntities();
-				if (subs != NULL)
+				if (subs != nullptr)
 				{
-					for (const auto& sub : *subs)
+					for (const auto& subEntity : *subs)
 					{
-						e = sub;
-						if ( e && e != except && e->bb->intersects(bb) && (selector == NULL || selector->matches(e)))
+						if (subEntity && subEntity != except && subEntity->bb->intersects(bb) && (selector == nullptr || selector->matches(subEntity)))
+
 						{
-							es.push_back(e);
+							es.push_back(subEntity);
 						}
 					}
 				}
