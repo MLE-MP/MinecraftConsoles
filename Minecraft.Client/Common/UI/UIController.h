@@ -102,8 +102,7 @@ private:
 		eLibrary_Default,
 
 #if ( defined(_WINDOWS64) )
-	// 4J Stu - Load the 720/480 skins so that we have something to fallback on during development
-#ifndef _FINAL_BUILD
+// Non-HD skin libraries needed by 720p/480p scene SWFs.
 		eLibraryFallback_Platform,
 		eLibraryFallback_GraphicsDefault,
 		eLibraryFallback_GraphicsHUD,
@@ -115,7 +114,6 @@ private:
 		eLibraryFallback_HUD,
 		eLibraryFallback_Tooltips,
 		eLibraryFallback_Default,
-#endif
 #endif
 
 		eLibrary_Count,
