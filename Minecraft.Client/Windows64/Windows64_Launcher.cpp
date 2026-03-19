@@ -375,6 +375,9 @@ LRESULT OnAccountRegister() {
 	else if (registerResponse == 7777) {
 		MessageBoxW(launcher_HWND, L"Username Contains Banned Word", L"Registraction Failed", MB_OK);
 	}
+	else if (registerResponse == 8888) {
+		MessageBoxW(launcher_HWND, L"Username Is Banned", L"Registraction Failed", MB_OK);
+	}
 	else { //unknown error, we will setup internal codes and have them logged here
 		MessageBoxW(launcher_HWND, std::wstring(L"Unknown Error: " + std::to_wstring(registerResponse)).c_str(), L"Registraction Failed", MB_OK);
 	}
