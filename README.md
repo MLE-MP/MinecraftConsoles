@@ -92,4 +92,4 @@ Would you like to contribute to this project? Please read our [Contributor's Gui
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=mle-mp/MinecraftConsoles&type=date&legend=top-left)](https://www.star-history.com/?spm=a2c6h.12873639.article-detail.7.7b9d7fabjNxTRk#mle-mp/MinecraftConsoles&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/image?repos=mclemp/MCLEClient&type=date&legend=top-left)](https://www.star-history.com/?repos=mclemp%2FMCLEClient&type=date&legend=top-left)
