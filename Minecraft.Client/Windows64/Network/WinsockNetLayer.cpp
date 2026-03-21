@@ -8,10 +8,6 @@
 #include "WinsockNetLayer.h"
 #include "..\..\Common\Network\PlatformNetworkManagerStub.h"
 #include "..\..\..\Minecraft.World\Socket.h"
-#if defined(MINECRAFT_SERVER_BUILD)
-#include "..\..\..\Minecraft.Server\Access\Access.h"
-#include "..\..\..\Minecraft.Server\ServerLogManager.h"
-#endif
 #include "..\..\..\Minecraft.World\DisconnectPacket.h"
 #include "..\..\Minecraft.h"
 #include "..\4JLibs\inc\4J_Profile.h"
@@ -19,9 +15,6 @@
 #include <string>
 
 static bool RecvExact(SOCKET sock, BYTE* buf, int len);
-#if defined(MINECRAFT_SERVER_BUILD)
-static bool TryGetNumericRemoteIp(const sockaddr_in &remoteAddress, std::string *outIp);
-#endif
 
 SOCKET WinsockNetLayer::s_listenSocket = INVALID_SOCKET;
 SOCKET WinsockNetLayer::s_hostConnectionSocket = INVALID_SOCKET;
@@ -595,33 +588,10 @@ DWORD WINAPI WinsockNetLayer::AcceptThreadProc(LPVOID param)
 		int noDelay = 1;
 		setsockopt(clientSocket, IPPROTO_TCP, TCP_NODELAY, (const char*)&noDelay, sizeof(noDelay));
 
-#if defined(MINECRAFT_SERVER_BUILD)
-		std::string remoteIp;
-		const bool hasRemoteIp = TryGetNumericRemoteIp(remoteAddress, &remoteIp);
-		const char *remoteIpForLog = hasRemoteIp ? remoteIp.c_str() : "unknown";
-		if (g_Win64DedicatedServer)
-		{
-			ServerRuntime::ServerLogManager::OnIncomingTcpConnection(remoteIpForLog);
-			if (hasRemoteIp && ServerRuntime::Access::IsIpBanned(remoteIp))
-			{
-				ServerRuntime::ServerLogManager::OnRejectedTcpConnection(remoteIpForLog, ServerRuntime::ServerLogManager::eTcpRejectReason_BannedIp);
-				SendRejectWithReason(clientSocket, DisconnectPacket::eDisconnect_Banned);
-				closesocket(clientSocket);
-				continue;
-			}
-		}
-#endif
 
 		extern QNET_STATE _iQNetStubState;
 		if (_iQNetStubState != QNET_STATE_GAME_PLAY)
 		{
-#if defined(MINECRAFT_SERVER_BUILD)
-			if (g_Win64DedicatedServer)
-			{
-				ServerRuntime::ServerLogManager::OnRejectedTcpConnection(remoteIpForLog, ServerRuntime::ServerLogManager::eTcpRejectReason_GameNotReady);
-			}
-			else
-#endif
 			{
 				app.DebugPrintf("Win64 LAN: Rejecting connection, game not ready\n");
 			}
@@ -632,13 +602,6 @@ DWORD WINAPI WinsockNetLayer::AcceptThreadProc(LPVOID param)
 		extern CPlatformNetworkManagerStub* g_pPlatformNetworkManager;
 		if (g_pPlatformNetworkManager != nullptr && !g_pPlatformNetworkManager->CanAcceptMoreConnections())
 		{
-#if defined(MINECRAFT_SERVER_BUILD)
-			if (g_Win64DedicatedServer)
-			{
-				ServerRuntime::ServerLogManager::OnRejectedTcpConnection(remoteIpForLog, ServerRuntime::ServerLogManager::eTcpRejectReason_ServerFull);
-			}
-			else
-#endif
 			{
 				app.DebugPrintf("Win64 LAN: Rejecting connection, server at max players\n");
 			}
@@ -661,13 +624,6 @@ DWORD WINAPI WinsockNetLayer::AcceptThreadProc(LPVOID param)
 		else
 		{
 			LeaveCriticalSection(&s_freeSmallIdLock);
-#if defined(MINECRAFT_SERVER_BUILD)
-			if (g_Win64DedicatedServer)
-			{
-				ServerRuntime::ServerLogManager::OnRejectedTcpConnection(remoteIpForLog, ServerRuntime::ServerLogManager::eTcpRejectReason_ServerFull);
-			}
-			else
-#endif
 			{
 				app.DebugPrintf("Win64 LAN: Server full, rejecting connection\n");
 			}
@@ -697,14 +653,6 @@ DWORD WINAPI WinsockNetLayer::AcceptThreadProc(LPVOID param)
 		s_connections.push_back(conn);
 		int connIdx = static_cast<int>(s_connections.size()) - 1;
 		LeaveCriticalSection(&s_connectionsLock);
-
-#if defined(MINECRAFT_SERVER_BUILD)
-		if (g_Win64DedicatedServer)
-		{
-			ServerRuntime::ServerLogManager::OnAcceptedTcpConnection(assignedSmallId, remoteIpForLog);
-		}
-		else
-#endif
 		{
 			app.DebugPrintf("Win64 LAN: Client connected, assigned smallId=%d\n", assignedSmallId);
 		}

@@ -17,10 +17,6 @@ private:
 		UI_MAP_ELEMENT( m_buttonListOffers, "OffersList")
 		UI_MAP_ELEMENT( m_labelOffers, "OffersList_Title")
 		UI_MAP_ELEMENT( m_Timer, "Timer")
-		if(m_loadedResolution == eSceneResolution_1080)
-		{
-			UI_MAP_ELEMENT( m_labelXboxStore, "XboxLabel" )
-		}
 	UI_END_MAP_ELEMENTS_AND_NAMES()
 
 	static int ExitDLCMainMenu(void *pParam,int iPad,C4JStorage::EMessageResult result);

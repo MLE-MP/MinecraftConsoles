@@ -34,8 +34,8 @@ UIScene_DLCOffersMenu::UIScene_DLCOffersMenu(int iPad, void *initData, UILayer *
 
 	m_labelOffers.init(app.GetString(IDS_DOWNLOADABLE_CONTENT_OFFERS));
 	m_buttonListOffers.init(eControl_OffersList);
-	m_labelHTMLSellText.init(L" ");
-	m_labelPriceTag.init(L" ");
+	m_labelHTMLSellText.init(L"[Sell Text]");
+	m_labelPriceTag.init(L"[Price Tag]");
 	TelemetryManager->RecordMenuShown(m_iPad, eUIScene_DLCOffersMenu, 0);
 
 	m_bHasPurchased = false;

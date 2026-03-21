@@ -34,25 +34,13 @@ UIScene_MainMenu::UIScene_MainMenu(int iPad, void *initData, UILayer *parentLaye
 
 
 	m_buttons[static_cast<int>(eControl_PlayGame)].init(IDS_PLAY_GAME,eControl_PlayGame);
-
-#ifdef _XBOX_ONE
-	if(!ProfileManager.IsFullVersion()) m_buttons[(int)eControl_PlayGame].setLabel(IDS_PLAY_TRIAL_GAME);
-	app.SetReachedMainMenu();
-#endif
-
+	m_buttons[static_cast<int>(eControl_ManageFriends)].init(UIString("Manage Friends"), eControl_ManageFriends);
 	m_buttons[static_cast<int>(eControl_Leaderboards)].init(IDS_LEADERBOARDS,eControl_Leaderboards);
 	m_buttons[static_cast<int>(eControl_Achievements)].init( (UIString)IDS_ACHIEVEMENTS,eControl_Achievements);
 	m_buttons[static_cast<int>(eControl_HelpAndOptions)].init(IDS_HELP_AND_OPTIONS,eControl_HelpAndOptions);
-	if(ProfileManager.IsFullVersion())
-	{
-		m_bTrialVersion=false;
-		m_buttons[static_cast<int>(eControl_UnlockOrDLC)].init(IDS_DOWNLOADABLECONTENT,eControl_UnlockOrDLC);
-	}
-	else
-	{
-		m_bTrialVersion=true;
-		m_buttons[static_cast<int>(eControl_UnlockOrDLC)].init(IDS_UNLOCK_FULL_GAME,eControl_UnlockOrDLC);
-	}
+
+	m_bTrialVersion=false;
+	
 
 #ifndef _DURANGO
 	m_buttons[static_cast<int>(eControl_Exit)].init(app.GetString(IDS_EXIT_GAME),eControl_Exit);
@@ -178,12 +166,6 @@ void UIScene_MainMenu::handleGainFocus(bool navBack)
 #ifdef _DURANGO
 	ProfileManager.ClearGameUsers();
 #endif
-		
-	if(navBack && ProfileManager.IsFullVersion())
-	{
-		// Replace the Unlock Full Game with Downloadable Content
-		m_buttons[static_cast<int>(eControl_UnlockOrDLC)].setLabel(IDS_DOWNLOADABLECONTENT);
-	}
 
 #if TO_BE_IMPLEMENTED
 	// Fix for #45154 - Frontend: DLC: Content can only be downloaded from the frontend if you have not joined/exited multiplayer
@@ -352,7 +334,7 @@ void UIScene_MainMenu::handlePress(F64 controlId, F64 childId)
 		m_eAction=eAction_RunHelpAndOptions;
 		signInReturnedFunc = &UIScene_MainMenu::HelpAndOptions_SignInReturned;
 		break;
-	case eControl_UnlockOrDLC:
+	case eControl_ManageFriends:
 		//CD - Added for audio
 		ui.PlayUISFX(eSFX_Press);
 
@@ -2129,7 +2111,7 @@ void UIScene_MainMenu::LoadTrial(void)
 
 void UIScene_MainMenu::handleUnlockFullVersion()
 {
-	m_buttons[static_cast<int>(eControl_UnlockOrDLC)].setLabel(IDS_DOWNLOADABLECONTENT,true);
+	
 }
 
 

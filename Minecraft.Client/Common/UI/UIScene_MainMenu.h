@@ -8,15 +8,11 @@ private:
 	enum EControls
 	{
 		eControl_PlayGame,
+		eControl_ManageFriends,
 		eControl_Leaderboards,
 		eControl_Achievements,
 		eControl_HelpAndOptions,
-		eControl_UnlockOrDLC,
-#ifndef _DURANGO
 		eControl_Exit,
-#else
-		eControl_XboxHelp,
-#endif
 		eControl_Count,
 	};
 
@@ -33,15 +29,11 @@ private:
 	UIControl m_controlTimer;
 	UI_BEGIN_MAP_ELEMENTS_AND_NAMES(UIScene)
 		UI_MAP_ELEMENT( m_buttons[(int)eControl_PlayGame], "Button1")
-		UI_MAP_ELEMENT( m_buttons[(int)eControl_Leaderboards], "Button2")
-		UI_MAP_ELEMENT( m_buttons[(int)eControl_Achievements], "Button3")
-		UI_MAP_ELEMENT( m_buttons[(int)eControl_HelpAndOptions], "Button4")
-		UI_MAP_ELEMENT( m_buttons[(int)eControl_UnlockOrDLC], "Button5")
-#ifndef _DURANGO
+		UI_MAP_ELEMENT( m_buttons[(int)eControl_ManageFriends], "Button2")
+		UI_MAP_ELEMENT( m_buttons[(int)eControl_Leaderboards], "Button3")
+		UI_MAP_ELEMENT( m_buttons[(int)eControl_Achievements], "Button4")
+		UI_MAP_ELEMENT( m_buttons[(int)eControl_HelpAndOptions], "Button5")
 		UI_MAP_ELEMENT( m_buttons[(int)eControl_Exit], "Button6")
-#else
-		UI_MAP_ELEMENT( m_buttons[(int)eControl_XboxHelp], "Button6")
-#endif
 		UI_MAP_ELEMENT( m_controlTimer, "Timer")
 	UI_END_MAP_ELEMENTS_AND_NAMES()
 	

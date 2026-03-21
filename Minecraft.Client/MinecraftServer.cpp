@@ -716,11 +716,11 @@ bool MinecraftServer::initServer(int64_t seed, NetworkGameInitData *initData, DW
 	}
 	if(gameRuleUseFlatWorld || app.GetGameHostOption(eGameHostOption_LevelType)>0)
 	{
-		levelTypeString = GetDedicatedServerString(settings, L"level-type",  L"flat");
+		levelTypeString = GetDedicatedServerString(settings, L"level-type", L"flat");
 	}
 	else
 	{
-		levelTypeString = GetDedicatedServerString(settings, L"level-type",L"default");
+		levelTypeString = GetDedicatedServerString(settings, L"level-type", L"default");
 	}
 
 	LevelType *pLevelType = LevelType::getLevelType(levelTypeString);

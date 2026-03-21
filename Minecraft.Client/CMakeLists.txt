@@ -23,7 +23,7 @@ set(MINECRAFT_CLIENT_SOURCES
   ${SOURCES_COMMON}
 )
 
-add_executable(Minecraft.Client ${MINECRAFT_CLIENT_SOURCES})
+add_executable(Minecraft.Client ${MINECRAFT_CLIENT_SOURCES} "Windows64/Network/Windows64Networking.cpp")
 
 # Only define executable on windows
 if(PLATFORM_NAME STREQUAL "Windows64")
