@@ -83,7 +83,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: tu19
+        tag_name: TU19-Release
         name: TU19 Client Release
         body: |
           Requires at least Windows 7 and DirectX 11 compatible GPU to run.
