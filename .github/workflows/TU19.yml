@@ -56,7 +56,7 @@ jobs:
     - name: Stage artifacts
       run: |
         New-Item -ItemType Directory -Force -Path staging
-        Copy-Item MLCE${{ matrix.platform }}.zip staging/
+        Copy-Item MCLE${{ matrix.platform }}.zip staging/
 
     - name: Stage exe and pdb
       if: matrix.platform == 'Windows64'
