@@ -47,6 +47,9 @@ jobs:
         configurePreset: ${{ env.MATRIX_PLATFORM }}
         buildPreset: ${{ env.MATRIX_PLATFORM }}-release
         buildPresetAdditionalArgs: "['--target', 'Minecraft.Client']"
+        
+    - name: Remove Useless files
+      run: del /build/${{ env.MATRIX_PLATFORM }}/Minecraft.Client/Release/*.iobj && del /build/${{ env.MATRIX_PLATFORM }}/Minecraft.Client/Release/*.ipdb
 
     - name: Zip Build
       run: 7z a -r LCE${{ matrix.platform }}.zip ./build/${{ env.MATRIX_PLATFORM }}/Minecraft.Client/Release/* "-x!*.ipdb" "-x!*.iobj"
@@ -54,7 +57,7 @@ jobs:
     - name: Stage artifacts
       run: |
         New-Item -ItemType Directory -Force -Path staging
-        Copy-Item LCE${{ matrix.platform }}.zip staging/
+        Copy-Item MLCE${{ matrix.platform }}.zip staging/
 
     - name: Stage exe and pdb
       if: matrix.platform == 'Windows64'
