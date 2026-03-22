@@ -11,6 +11,8 @@
 #include "..\..\MinecraftServer.h"
 #include "..\..\PlayerList.h"
 #include <iostream>
+
+#include "Windows64/Windows64_Minecraft.h"
 #endif
 
 CPlatformNetworkManagerStub *g_pPlatformNetworkManager;
@@ -434,49 +436,18 @@ void CPlatformNetworkManagerStub::HostGame(int localUsersMask, bool bOnlineGame,
 
 	m_pIQNet->HostGame();
 
-#ifdef _WINDOWS64
-	IQNet::m_player[0].m_smallId = 0;
-	IQNet::m_player[0].m_isRemote = false;
-	// world host is pinned to legacy host XUID to keep old player data compatibility.
-	IQNet::m_player[0].m_isHostPlayer = true;
-	IQNet::m_player[0].m_resolvedXuid = Win64Xuid::GetLegacyEmbeddedHostXuid();
-	IQNet::s_playerCount = 1;
-#endif
-
 	_HostGame( localUsersMask, publicSlots, privateSlots );
 
 #ifdef _WINDOWS64
-	int port = WIN64_NET_DEFAULT_PORT;
-	const char* bindIp = nullptr;
-	if (g_Win64DedicatedServer)
-	{
-		if (g_Win64DedicatedServerPort > 0)
-			port = g_Win64DedicatedServerPort;
-		if (g_Win64DedicatedServerBindIP[0] != 0)
-			bindIp = g_Win64DedicatedServerBindIP;
-	}
 	if (!WinsockNetLayer::IsActive())
-		WinsockNetLayer::HostGame(port, bindIp);
+		WinsockNetLayer::HostGame(0, "bindIp");
 
 	if (WinsockNetLayer::IsActive())
 	{
-		// For Dedicated Server, refer to `lan-advertise` in `server.properties`
-		bool enableLanAdvertising = true;
-		if (g_Win64DedicatedServer)
-		{
-			enableLanAdvertising = g_Win64DedicatedServerLanAdvertise;
-		}
 
-		if (enableLanAdvertising)
-		{
-			const wchar_t* hostName = IQNet::m_player[0].m_gamertag;
-			unsigned int settings = app.GetGameHostOption(eGameHostOption_All);
-			WinsockNetLayer::StartAdvertising(port, hostName, settings, 0, 0, MINECRAFT_NET_VERSION);
-		}
-		else
-		{
-			WinsockNetLayer::StopAdvertising();
-		}
+		const wchar_t* hostName = IQNet::m_player[0].m_gamertag;
+		unsigned int settings = app.GetGameHostOption(eGameHostOption_All);
+		WinsockNetLayer::StartAdvertising(0, hostName, settings, 0, 0, MINECRAFT_NET_VERSION);
 	}
 #endif
 //#endif
@@ -511,8 +482,6 @@ int CPlatformNetworkManagerStub::JoinGame(FriendSessionInfo* searchResult, int l
 	IQNet::m_player[0].m_smallId = 0;
 	IQNet::m_player[0].m_isRemote = true;
 	IQNet::m_player[0].m_isHostPlayer = true;
-	// Remote host still maps to legacy host XUID in mixed old/new sessions.
-	IQNet::m_player[0].m_resolvedXuid = Win64Xuid::GetLegacyEmbeddedHostXuid();
 	wcsncpy_s(IQNet::m_player[0].m_gamertag, 32, searchResult->data.hostName, _TRUNCATE);
 
 	WinsockNetLayer::StopDiscovery();
@@ -528,8 +497,6 @@ int CPlatformNetworkManagerStub::JoinGame(FriendSessionInfo* searchResult, int l
 	IQNet::m_player[localSmallId].m_smallId = localSmallId;
 	IQNet::m_player[localSmallId].m_isRemote = false;
 	IQNet::m_player[localSmallId].m_isHostPlayer = false;
-	// Local non-host identity is the persistent uid.dat XUID.
-	IQNet::m_player[localSmallId].m_resolvedXuid = Win64Xuid::ResolvePersistentXuid();
 
 	Minecraft* pMinecraft = Minecraft::GetInstance();
 	wcscpy_s(IQNet::m_player[localSmallId].m_gamertag, 32, pMinecraft->user->name.c_str());

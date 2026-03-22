@@ -8,7 +8,7 @@ private:
 	enum EControls
 	{
 		eControl_PlayGame,
-		eControl_ManageFriends,
+		eControl_JoinServers,
 		eControl_Leaderboards,
 		eControl_Achievements,
 		eControl_HelpAndOptions,
@@ -29,7 +29,7 @@ private:
 	UIControl m_controlTimer;
 	UI_BEGIN_MAP_ELEMENTS_AND_NAMES(UIScene)
 		UI_MAP_ELEMENT( m_buttons[(int)eControl_PlayGame], "Button1")
-		UI_MAP_ELEMENT( m_buttons[(int)eControl_ManageFriends], "Button2")
+		UI_MAP_ELEMENT( m_buttons[(int)eControl_JoinServers], "Button2")
 		UI_MAP_ELEMENT( m_buttons[(int)eControl_Leaderboards], "Button3")
 		UI_MAP_ELEMENT( m_buttons[(int)eControl_Achievements], "Button4")
 		UI_MAP_ELEMENT( m_buttons[(int)eControl_HelpAndOptions], "Button5")

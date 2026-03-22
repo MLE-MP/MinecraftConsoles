@@ -6,10 +6,12 @@
 
 #include <WinSock2.h>
 #include <WS2tcpip.h>
+#include <winhttp.h>
 #include <vector>
 #include "..\..\Common\Network\NetworkPlayerInterface.h"
 
 #pragma comment(lib, "Ws2_32.lib")
+#pragma comment(lib, "winhttp.lib")
 
 #define WIN64_NET_DEFAULT_PORT 25565
 #define WIN64_NET_MAX_CLIENTS 255
@@ -18,6 +20,11 @@
 #define WIN64_NET_MAX_PACKET_SIZE (4 * 1024 * 1024)
 #define WIN64_LAN_DISCOVERY_PORT 25566
 #define WIN64_LAN_BROADCAST_MAGIC 0x4D434C4E
+
+struct HttpResponse {
+	int status;
+	std::string body;
+};
 
 class Socket;
 
@@ -68,6 +75,8 @@ public:
 
 	static bool HostGame(int port, const char* bindIp = nullptr);
 	static bool JoinGame(const char* ip, int port);
+
+	static HttpResponse DoWinHttpRequest(const std::wstring& path, const wchar_t* method, const std::string& requestData, const std::vector<std::wstring>& headers);
 
 	static bool SendToSmallId(BYTE targetSmallId, const void* data, int dataSize);
 	static bool SendOnSocket(SOCKET sock, const void* data, int dataSize);
@@ -162,14 +171,5 @@ private:
 public:
 	static void ClearSocketForSmallId(BYTE smallId);
 };
-
-extern bool g_Win64MultiplayerHost;
-extern bool g_Win64MultiplayerJoin;
-extern int g_Win64MultiplayerPort;
-extern char g_Win64MultiplayerIP[256];
-extern bool g_Win64DedicatedServer;
-extern int g_Win64DedicatedServerPort;
-extern char g_Win64DedicatedServerBindIP[256];
-extern bool g_Win64DedicatedServerLanAdvertise;
 
 #endif

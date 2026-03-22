@@ -35,6 +35,7 @@
 #include "Orbis\Sentient\DynamicConfigurations.h"
 #include <perf.h>
 #endif
+#include <Windows64/Windows64_Minecraft.h>
 
 #if !defined(__PS3__) && !defined(__ORBIS__) && !defined(__PSVITA__)
 #ifdef _WINDOWS64
@@ -362,8 +363,6 @@ void IQNet::HostGame()
 {
 	_iQNetStubState = QNET_STATE_SESSION_STARTING;
 	s_isHosting = true;
-	// Host slot keeps legacy XUID so old host player data remains addressable.
-	m_player[0].m_resolvedXuid = Win64Xuid::GetLegacyEmbeddedHostXuid();
 }
 void IQNet::ClientJoinGame()
 {
@@ -638,7 +637,7 @@ void				C_4JProfile::GetXUID(int iPad, PlayerUID * pXuid, bool bOnlineXuid)
 	// Each pad gets a unique XUID derived from the persistent uid.dat value.
 	// Pad 0 uses the base XUID directly. Pads 1-3 get a deterministic hash
 	// of (base + pad) to produce fully independent IDs with no overlap risk.
-	*pXuid = Win64Xuid::DeriveXuidForPad(Win64Xuid::ResolvePersistentXuid(), iPad);
+	*pXuid = Win64Xuid::DeriveXuidForPad(Windows64Minecraft::GetMainXUID(), iPad);
 #else
 	* pXuid = 0xe000d45248242f2e + iPad;
 #endif

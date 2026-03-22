@@ -1050,11 +1050,7 @@ shared_ptr<MultiplayerLocalPlayer> Minecraft::createExtraLocalPlayer(int idx, co
 		INetworkPlayer *localNetworkPlayer = g_NetworkManager.GetLocalPlayerByUserIndex(idx);
 		if(localNetworkPlayer != nullptr && localNetworkPlayer->IsHost())
 		{
-			playerXUIDOffline = Win64Xuid::GetLegacyEmbeddedHostXuid();
-		}
-		else
-		{
-			playerXUIDOffline = Win64Xuid::ResolvePersistentXuid();
+			playerXUIDOffline = Win64Xuid::ResolvePersistentXuidFromName(localNetworkPlayer->GetDisplayName());
 		}
 #endif
 		localplayers[idx]->setXuid(playerXUIDOffline);
@@ -4377,11 +4373,7 @@ void Minecraft::setLevel(MultiPlayerLevel *level, int message /*=-1*/, shared_pt
 			INetworkPlayer *localNetworkPlayer = g_NetworkManager.GetLocalPlayerByUserIndex(iPrimaryPlayer);
 			if(localNetworkPlayer != nullptr && localNetworkPlayer->IsHost())
 			{
-				playerXUIDOffline = Win64Xuid::GetLegacyEmbeddedHostXuid();
-			}
-			else
-			{
-				playerXUIDOffline = Win64Xuid::ResolvePersistentXuid();
+				playerXUIDOffline = Win64Xuid::ResolvePersistentXuidFromName(localNetworkPlayer->GetDisplayName());
 			}
 #endif
 			player->setXuid(playerXUIDOffline);
@@ -4571,11 +4563,7 @@ void Minecraft::respawnPlayer(int iPad, int dimension, int newEntityId)
 	INetworkPlayer *localNetworkPlayer = g_NetworkManager.GetLocalPlayerByUserIndex(iTempPad);
 	if(localNetworkPlayer != nullptr && localNetworkPlayer->IsHost())
 	{
-		playerXUIDOffline = Win64Xuid::GetLegacyEmbeddedHostXuid();
-	}
-	else
-	{
-		playerXUIDOffline = Win64Xuid::ResolvePersistentXuid();
+		playerXUIDOffline = Win64Xuid::ResolvePersistentXuidFromName(localNetworkPlayer->GetDisplayName());
 	}
 #endif
 	player->setXuid(playerXUIDOffline);

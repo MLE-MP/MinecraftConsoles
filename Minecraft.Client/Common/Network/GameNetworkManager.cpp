@@ -44,6 +44,7 @@
 #ifdef _WINDOWS64
 #include "..\..\Windows64\Network\WinsockNetLayer.h"
 #include "..\..\Windows64\Windows64_Xuid.h"
+#include "..\..\Windows64\Windows64_Minecraft.h"
 #endif
 
 // Global instance
@@ -1544,7 +1545,7 @@ void CGameNetworkManager::CreateSocket( INetworkPlayer *pNetworkPlayer, bool loc
 			// The NetworkPlayerXbox created by NotifyPlayerJoined already points to
 			// m_player[padIdx], so we just set the smallId for network routing.
 			IQNet::m_player[padIdx].m_smallId = assignedSmallId;
-			IQNet::m_player[padIdx].m_resolvedXuid = Win64Xuid::DeriveXuidForPad(Win64Xuid::ResolvePersistentXuid(), padIdx);
+			IQNet::m_player[padIdx].m_resolvedXuid = Win64Xuid::DeriveXuidForPad(Windows64Minecraft::GetMainXUID(), padIdx);
 
 			// Network socket (not hostLocal) — data goes through TCP via GetLocalSocket
 			socket = new Socket(pNetworkPlayer, false, false);

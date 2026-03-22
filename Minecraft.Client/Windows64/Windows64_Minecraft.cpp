@@ -59,6 +59,7 @@ extern Renderer InternalRenderManager;
 #ifdef _MSC_VER
 #pragma comment(lib, "legacy_stdio_definitions.lib")
 #endif
+#include "Windows64_Minecraft.h"
 
 HINSTANCE hMyInst;
 LRESULT CALLBACK DlgProc(HWND hWndDlg, UINT Msg, WPARAM wParam, LPARAM lParam);
@@ -113,6 +114,58 @@ static bool g_bResizeReady = false;
 
 char g_Win64Username[17] = { 0 };
 wchar_t g_Win64UsernameW[17] = { 0 };
+
+char g_Win64SessionTicket[120];
+
+bool isOfflineMode = false;
+
+bool Windows64Minecraft::IsOfflineMode() {
+	return isOfflineMode;
+}
+
+std::string Windows64Minecraft::GetAuthenticationTicket() {
+	return g_Win64SessionTicket;
+}
+
+PlayerUID Windows64Minecraft::GetMainXUID()
+{
+	return Win64Xuid::ResolvePersistentXuidFromName(g_Win64UsernameW);
+}
+
+std::vector<std::string> split(const std::string& str, char delimiter) {
+	std::vector<std::string> result;
+	size_t start = 0;
+	size_t end = 0;
+
+	while ((end = str.find(delimiter, start)) != std::string::npos) {
+		result.push_back(str.substr(start, end - start));
+		start = end + 1;
+	}
+
+	// Add the last substring
+	result.push_back(str.substr(start));
+	return result;
+}
+
+bool FetchSessionInfo() {
+	std::vector<std::wstring> headers;
+	headers.push_back(L"Content-Type: text/plain");
+
+	HttpResponse response = WinsockNetLayer::DoWinHttpRequest(L"/getSessionInfo", L"POST", Windows64Minecraft::GetAuthenticationTicket(), headers);
+
+	if (response.status == 0) return false;
+
+	if (response.status != 200) return false;
+
+	if (response.body.find('-') == std::string::npos) return false;
+	std::vector<std::string> splitData = split(response.body.erase(0, 1), '|');
+	std::string username = splitData[0];
+
+	MultiByteToWideChar(CP_ACP, 0, username.c_str(), -1, g_Win64UsernameW, static_cast<int>(sizeof(g_Win64UsernameW)));
+	WideCharToMultiByte(CP_ACP, 0, g_Win64UsernameW, -1, g_Win64Username, static_cast<int>(sizeof(g_Win64Username)), nullptr, nullptr);
+
+	return 0;
+}
 
 // Fullscreen toggle state
 static bool g_isFullscreen = false;
@@ -186,9 +239,6 @@ static Win64LaunchOptions ParseLaunchOptions()
 	Win64LaunchOptions options = {};
 	options.screenMode = 0;
 
-	g_Win64MultiplayerJoin = false;
-	g_Win64MultiplayerPort = WIN64_NET_DEFAULT_PORT;
-
 	int argc = 0;
 	LPWSTR* argv = CommandLineToArgvW(GetCommandLineW(), &argc);
 	if (argv == nullptr)
@@ -218,8 +268,13 @@ static Win64LaunchOptions ParseLaunchOptions()
 		else*/
 	for (int i = 1; i < argc; ++i)
 	{
-		if (_wcsicmp(argv[i], L"-fullscreen") == 0)
-			options.fullscreen = true;
+		if (_wcsicmp(argv[i], L"-username") == 0 && (i + 1) < argc) {
+			CopyWideArgToAnsi(argv[++i], g_Win64Username, sizeof(g_Win64Username));
+		} else if (_wcsicmp(argv[i], L"-session") == 0 && (i + 1) < argc) {
+			CopyWideArgToAnsi(argv[++i], g_Win64SessionTicket, sizeof(g_Win64SessionTicket));
+		} else if (_wcsicmp(argv[i], L"-offline") == 0) {
+			isOfflineMode = true;
+		}
 	}
 
 	LocalFree(argv);
@@ -1269,11 +1324,7 @@ static Minecraft* InitialiseMinecraftRuntime()
 	return pMinecraft;
 }
 
-int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
-					   _In_opt_ HINSTANCE hPrevInstance,
-					   _In_ LPTSTR    lpCmdLine,
-					   _In_ int       nCmdShow)
-{
+int APIENTRY _tWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPTSTR lpCmdLine, _In_ int nCmdShow) {
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
 
@@ -1297,8 +1348,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	// Load stuff from launch options, including username
 	const Win64LaunchOptions launchOptions = ParseLaunchOptions();
 
-	// Ensure uid.dat exists from startup (before any multiplayer/login path).
-	Win64Xuid::ResolvePersistentXuid();
+	FetchSessionInfo();
 
 	// If no username, let's fall back
 	if (g_Win64Username[0] == 0)

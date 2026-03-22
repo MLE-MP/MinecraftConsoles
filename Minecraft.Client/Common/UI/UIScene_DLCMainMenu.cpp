@@ -15,17 +15,17 @@ UIScene_DLCMainMenu::UIScene_DLCMainMenu(int iPad, void *initData, UILayer *pare
 	// Alert the app the we want to be informed of ethernet connections
 	//app.SetLiveLinkRequired( true );
 
-	m_labelOffers.init(UIString("Manage Friends"));
+	m_labelOffers.init(UIString("Join Servers"));
 	m_buttonListOffers.init(eControl_OffersList);
 
 	m_Timer.setVisible(false); //use this while we query friends from the server, async
 
-	m_buttonListOffers.addItem(UIString("Add Friend"), 0);
-	m_buttonListOffers.addItem(UIString(""), 1);
+	//m_buttonListOffers.addItem(UIString("Add Friend"), 0);
+	//m_buttonListOffers.addItem(UIString(""), 1);
 
-	for (int i = 0; i < 5; i++) {
-		m_buttonListOffers.addItem(UIString("Custom String " + std::to_string(i)), i);
-	}
+	//for (int i = 0; i < 5; i++) {
+	//	m_buttonListOffers.addItem(UIString("Custom String " + std::to_string(i)), i);
+	//}
 	//m_buttonListOffers.addItem(IDS_DLC_MENU_TEXTUREPACKS,e_DLC_TexturePacks);
 	//m_buttonListOffers.addItem(IDS_DLC_MENU_MASHUPPACKS, e_DLC_MashupPacks);
 

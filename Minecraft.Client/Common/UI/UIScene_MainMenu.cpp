@@ -34,7 +34,7 @@ UIScene_MainMenu::UIScene_MainMenu(int iPad, void *initData, UILayer *parentLaye
 
 
 	m_buttons[static_cast<int>(eControl_PlayGame)].init(IDS_PLAY_GAME,eControl_PlayGame);
-	m_buttons[static_cast<int>(eControl_ManageFriends)].init(UIString("Manage Friends"), eControl_ManageFriends);
+	m_buttons[static_cast<int>(eControl_JoinServers)].init(UIString("Join Servers"), eControl_JoinServers);
 	m_buttons[static_cast<int>(eControl_Leaderboards)].init(IDS_LEADERBOARDS,eControl_Leaderboards);
 	m_buttons[static_cast<int>(eControl_Achievements)].init( (UIString)IDS_ACHIEVEMENTS,eControl_Achievements);
 	m_buttons[static_cast<int>(eControl_HelpAndOptions)].init(IDS_HELP_AND_OPTIONS,eControl_HelpAndOptions);
@@ -334,7 +334,7 @@ void UIScene_MainMenu::handlePress(F64 controlId, F64 childId)
 		m_eAction=eAction_RunHelpAndOptions;
 		signInReturnedFunc = &UIScene_MainMenu::HelpAndOptions_SignInReturned;
 		break;
-	case eControl_ManageFriends:
+	case eControl_JoinServers:
 		//CD - Added for audio
 		ui.PlayUISFX(eSFX_Press);
 
