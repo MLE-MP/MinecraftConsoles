@@ -1394,7 +1394,10 @@ HttpResponse WinsockNetLayer::DoWinHttpRequest(const std::wstring& path, const w
 	HINTERNET hConnect = WinHttpConnect(hSession, g_Win64AuthIP_Wide, g_Win64AuthServerPort, 0);
 	if (!hConnect) { WinHttpCloseHandle(hSession); return response; }
 
-	HINTERNET hRequest = WinHttpOpenRequest(hConnect, method, path.c_str(), NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, WINHTTP_FLAG_SECURE);
+	int flags = 0; //WINHTTP_FLAG_SECURE
+
+
+	HINTERNET hRequest = WinHttpOpenRequest(hConnect, method, path.c_str(), NULL, WINHTTP_NO_REFERER, WINHTTP_DEFAULT_ACCEPT_TYPES, flags);
 	if (!hRequest) { WinHttpCloseHandle(hConnect); WinHttpCloseHandle(hSession); return response; }
 
 	for (const auto& header : headers) {

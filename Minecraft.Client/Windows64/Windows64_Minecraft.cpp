@@ -60,6 +60,7 @@ extern Renderer InternalRenderManager;
 #pragma comment(lib, "legacy_stdio_definitions.lib")
 #endif
 #include "Windows64_Minecraft.h"
+#include <format>
 
 HINSTANCE hMyInst;
 LRESULT CALLBACK DlgProc(HWND hWndDlg, UINT Msg, WPARAM wParam, LPARAM lParam);
@@ -147,7 +148,7 @@ std::vector<std::string> split(const std::string& str, char delimiter) {
 	return result;
 }
 
-bool FetchSessionInfo() {
+static bool FetchSessionInfo() {
 	std::vector<std::wstring> headers;
 	headers.push_back(L"Content-Type: text/plain");
 
@@ -157,14 +158,16 @@ bool FetchSessionInfo() {
 
 	if (response.status != 200) return false;
 
-	if (response.body.find('-') == std::string::npos) return false;
-	std::vector<std::string> splitData = split(response.body.erase(0, 1), '|');
-	std::string username = splitData[0];
+	if (response.body.empty() || response.body[0] != '-') return false;
+	std::string payload = response.body.substr(1);
+	//std::vector<std::string> splitData = split(payload, '|');
 
-	MultiByteToWideChar(CP_ACP, 0, username.c_str(), -1, g_Win64UsernameW, static_cast<int>(sizeof(g_Win64UsernameW)));
-	WideCharToMultiByte(CP_ACP, 0, g_Win64UsernameW, -1, g_Win64Username, static_cast<int>(sizeof(g_Win64Username)), nullptr, nullptr);
+	strncpy_s(g_Win64Username, sizeof(g_Win64Username), payload.c_str(), _TRUNCATE);
+	MultiByteToWideChar(CP_UTF8, 0, g_Win64Username, -1, g_Win64UsernameW, sizeof(g_Win64UsernameW) / sizeof(wchar_t));
 
-	return 0;
+	//WideCharToMultiByte(CP_ACP, 0, g_Win64UsernameW, -1, g_Win64Username, static_cast<int>(sizeof(g_Win64Username)), nullptr, nullptr);
+
+	return true;
 }
 
 // Fullscreen toggle state
@@ -1349,15 +1352,6 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstanc
 	const Win64LaunchOptions launchOptions = ParseLaunchOptions();
 
 	FetchSessionInfo();
-
-	// If no username, let's fall back
-	if (g_Win64Username[0] == 0)
-	{
-        // Default username will be "Player"
-        strncpy_s(g_Win64Username, sizeof(g_Win64Username), "Player", _TRUNCATE);
-	}
-
-	MultiByteToWideChar(CP_ACP, 0, g_Win64Username, -1, g_Win64UsernameW, 17);
 
 	// Initialize global strings
 	MyRegisterClass(hInstance);
