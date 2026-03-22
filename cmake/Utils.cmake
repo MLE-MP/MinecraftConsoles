@@ -1,4 +1,4 @@
-# Make sure the GameHDD directory exists, only supported on Windows
+# Make sure the GameHDD directory exists
 function(add_gamehdd_target TARGET_NAME)
   add_custom_target(EnsureGameHDD_${TARGET_NAME} ALL
     COMMAND ${CMAKE_COMMAND}
@@ -8,6 +8,18 @@ function(add_gamehdd_target TARGET_NAME)
   )
   add_dependencies(${TARGET_NAME} EnsureGameHDD_${TARGET_NAME})
   set_property(TARGET EnsureGameHDD_${TARGET_NAME} PROPERTY FOLDER "Build")
+endfunction()
+
+# Make sure the Settings directory exists
+function(add_settings_target TARGET_NAME)
+  add_custom_target(EnsureSettings_${TARGET_NAME} ALL
+    COMMAND ${CMAKE_COMMAND}
+      -E make_directory "$<TARGET_FILE_DIR:${TARGET_NAME}>/Windows64/Settings"
+    COMMENT "Ensuring Settings directory exists..."
+    VERBATIM
+  )
+  add_dependencies(${TARGET_NAME} EnsureSettings_${TARGET_NAME})
+  set_property(TARGET EnsureSettings_${TARGET_NAME} PROPERTY FOLDER "Build")
 endfunction()
 
 # Copy any needed redist files to the output directory

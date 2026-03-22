@@ -787,7 +787,7 @@ static void Win64_GetSettingsPath(char *outPath, DWORD size)
     GetModuleFileNameA(nullptr, outPath, size);
     char *lastSlash = strrchr(outPath, '\\');
     if (lastSlash) *(lastSlash + 1) = '\0';
-    strncat_s(outPath, size, "settings.dat", _TRUNCATE);
+    strncat_s(outPath, size, "Windows64/Settings/settings.dat", _TRUNCATE);
 }
 static void Win64_SaveSettings(GAME_SETTINGS *gs)
 {

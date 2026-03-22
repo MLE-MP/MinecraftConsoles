@@ -78,7 +78,7 @@ endforeach()
 # ---
 include("${CMAKE_SOURCE_DIR}/cmake/CopyAssets.cmake")
 set(ASSET_FOLDER_PAIRS
-  "${CMAKE_CURRENT_SOURCE_DIR}/music"                  "music"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Music"                  "${PLATFORM_NAME}Media/Music"
   "${CMAKE_CURRENT_SOURCE_DIR}/Common/Media"           "Common/Media"
   "${CMAKE_CURRENT_SOURCE_DIR}/Common/res"             "Common/res"
   "${CMAKE_CURRENT_SOURCE_DIR}/Common/Trial"           "Common/Trial"
@@ -93,4 +93,5 @@ add_copyredist_target(Minecraft.Client)
 # Make sure GameHDD exists on Windows
 if(PLATFORM_NAME STREQUAL "Windows64")
   add_gamehdd_target(Minecraft.Client)
+  add_settings_target(Minecraft.Client)
 endif()
