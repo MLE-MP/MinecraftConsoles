@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "UI.h"
 #include "UIScene_Keyboard.h"
+#include "..\..\Screen.h"
 
 #ifdef _WINDOWS64
 // Global buffer that stores the text entered in the native keyboard scene.
@@ -219,6 +220,38 @@ void UIScene_Keyboard::tick()
 			else
 			{
 				m_win64TextBuffer += ch;
+			}
+			changed = true;
+		}
+	}
+
+	// Paste from clipboard
+	if (g_KBMInput.IsKeyPressed('V') && g_KBMInput.IsKeyDown(VK_CONTROL))
+	{
+		wstring pasted = Screen::getClipboard();
+		wstring sanitized;
+		sanitized.reserve(pasted.length());
+
+		for (wchar_t pc : pasted)
+		{
+			if (pc >= 0x20) // Keep printable characters
+			{
+				if (static_cast<int>(m_win64TextBuffer.length() + sanitized.length()) >= m_win64MaxChars)
+					break;
+				sanitized += pc;
+			}
+		}
+
+		if (!sanitized.empty())
+		{
+			if (m_bPCMode)
+			{
+				m_win64TextBuffer.insert(m_iCursorPos, sanitized);
+				m_iCursorPos += (int)sanitized.length();
+			}
+			else
+			{
+				m_win64TextBuffer += sanitized;
 			}
 			changed = true;
 		}

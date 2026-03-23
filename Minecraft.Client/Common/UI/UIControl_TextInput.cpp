@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "UI.h"
 #include "UIControl_TextInput.h"
+#include "..\..\Screen.h"
 
 UIControl_TextInput::UIControl_TextInput()
 {
@@ -207,6 +208,31 @@ UIControl_TextInput::EDirectEditResult UIControl_TextInput::tickDirectEdit()
 		{
 			m_editBuffer.insert(m_iCursorPos, 1, ch);
 			m_iCursorPos++;
+			changed = true;
+		}
+	}
+
+	// Paste from clipboard
+	if (g_KBMInput.IsKeyPressed('V') && g_KBMInput.IsKeyDown(VK_CONTROL))
+	{
+		wstring pasted = Screen::getClipboard();
+		wstring sanitized;
+		sanitized.reserve(pasted.length());
+
+		for (wchar_t pc : pasted)
+		{        
+			if (pc >= 0x20) // Keep printable characters
+			{
+				if (m_iCharLimit > 0 && (m_editBuffer.length() + sanitized.length()) >= (size_t)m_iCharLimit)
+					break;
+				sanitized += pc;
+			}
+		}
+
+		if (!sanitized.empty())
+		{
+			m_editBuffer.insert(m_iCursorPos, sanitized);
+			m_iCursorPos += (int)sanitized.length();
 			changed = true;
 		}
 	}
