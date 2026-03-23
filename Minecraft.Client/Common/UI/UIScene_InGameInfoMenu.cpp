@@ -17,19 +17,21 @@ UIScene_InGameInfoMenu::UIScene_InGameInfoMenu(int iPad, void *initData, UILayer
 
 	m_players = vector<PlayerInfo *>();
 
-	DWORD playerCount = g_NetworkManager.GetPlayerCount();
+	INetworkPlayer* currentPlayer = nullptr;
+	bool justStarted = true;
+	int currentIndex = 0;
 
-	for(DWORD i = 0; i < playerCount; ++i)
-	{
-		INetworkPlayer *player = g_NetworkManager.GetPlayerByIndex( i );
+	while (currentPlayer != nullptr || justStarted) {
+		currentPlayer = g_NetworkManager.GetPlayerByIndex(currentIndex);
+		if (currentPlayer == nullptr) break;
 
-		if( player != nullptr )
-		{
-			PlayerInfo *info = BuildPlayerInfo(player);
+		PlayerInfo* info = BuildPlayerInfo(currentPlayer);
 
-			m_players.push_back(info);
-			m_playerList.addItem(info->m_name, info->m_colorState, info->m_voiceStatus); 
-		}
+		m_players.push_back(info);
+		m_playerList.addItem(info->m_name, info->m_colorState, info->m_voiceStatus);
+
+		justStarted = false;
+		currentIndex++;
 	}
 
 	g_NetworkManager.RegisterPlayerChangedCallback(m_iPad, &UIScene_InGameInfoMenu::OnPlayerChanged, this);
