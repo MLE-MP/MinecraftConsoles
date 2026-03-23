@@ -324,7 +324,7 @@ IQNetPlayer* IQNet::GetPlayerByIndex(DWORD dwPlayerIndex)
 			found++;
 		}
 	}
-	return &m_player[0];
+	return nullptr;
 }
 IQNetPlayer* IQNet::GetPlayerBySmallId(BYTE SmallId)
 {
