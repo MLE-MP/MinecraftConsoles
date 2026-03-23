@@ -918,7 +918,7 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
 		//font->drawShadow(minecraft->gatherStats3(), // RTT
 		//font->drawShadow(minecraft->gatherStats5(), iSafezoneXHalf+2, 32 + 10, 0xffffff);
 
-#ifndef _FINAL_BUILD
+#ifndef _CONTENT_PACKAGE
 		int iYPos = debugTop + 112;
 		if(minecraft->level->dimension->id==0)
 		{
@@ -955,7 +955,7 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
 			}
 		}
 
-        drawString(font, L"XYZ: " + std::wstring(posString), debugLeft, iYPos + 8 * 0, 0xe0e0e0);
+        drawString(font, L"XYZ: " + std::wstring(posString), debugLeft, iYPos + 8 * 0, 0xffffff);
 #endif
 		int px = Mth::floor(minecraft->player->x);
 		int py = Mth::floor(minecraft->player->y);
