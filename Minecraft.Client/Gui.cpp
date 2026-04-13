@@ -1208,7 +1208,20 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
 
 		// Disable the depth test so the text shows on top of the paperdoll
         glDisable(GL_DEPTH_TEST);
+#ifdef _WINDOWS64
+		float scaleWidth = (g_rScreenWidth / 1920.0f);
+		float scaleHeight = (g_rScreenHeight / 1080.0f);
 
+		float scale = min(scaleWidth, scaleHeight); //stop stretching
+
+		if (scale < 0.5f) scale = 0.5f; // force minimum scale
+        if (scale > 1.2f) // resolutions over 1296 pixels tall
+        {
+			scale = scale - 0.33f; // tame overscaling on 1440p
+		}
+			
+		glScalef(scale, scale, 1);
+#endif
         // Loop through the lines and draw them all on screen
         int yPos = debugTop;
         for (const auto &line : lines)
@@ -1217,6 +1230,9 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
             yPos += 10;
         }
 
+#ifdef _WINDOWS64
+		glScalef(1, 1, 1);
+#endif
 		// Restore the depth test
         glEnable(GL_DEPTH_TEST);
 
