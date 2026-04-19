@@ -275,17 +275,7 @@ UIScene_LoadMenu::UIScene_LoadMenu(int iPad, void *initData, UILayer *parentLaye
 				m_pbThumbnailData = params->saveDetails->pbThumbnailData;
 				m_uiThumbnailSize = params->saveDetails->dwThumbnailSize;
 			}
-			else
-			{
-				// ask the storage lib to load it
-				PSAVE_DETAILS pSaveDetails = StorageManager.ReturnSavesInfo();
-				if (pSaveDetails)
-				{
-					StorageManager.LoadSaveDataThumbnail(
-						&pSaveDetails->SaveInfoA[(int)m_iSaveGameInfoIndex],
-						&LoadSaveDataThumbnailReturned, (LPVOID)GetCallbackUniqueId());
-				}
-			}
+
 			m_bRetrievingSaveThumbnail = false;
 		}
 #endif
