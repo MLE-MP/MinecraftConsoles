@@ -3,7 +3,7 @@
 ## Visual Studio
 
 1. Clone the repo, including submodules.
-  - If you don't, the build will fail. `git clone --recurse-submodules https://github.com/MCLCE/MinecraftConsoles.git`
+    - If you don't, the build will fail. `git clone --recurse-submodules https://github.com/MCLCE/MinecraftConsoles.git`
 2. Open the repo folder in Visual Studio 2022+.
 3. Wait for cmake to configure the project and load all assets (this may take a few minutes on the first run).
 4. Right click a folder in the solution explorer and switch to the 'CMake Targets View'
