@@ -2,13 +2,14 @@
 
 ## Visual Studio
 
-1. Clone or download the repository
-1. Open the repo folder in Visual Studio 2022+.
-2. Wait for cmake to configure the project and load all assets (this may take a few minutes on the first run).
-3. Right click a folder in the solution explorer and switch to the 'CMake Targets View'
-4. Select platform and configuration from the dropdown. EG: `Windows64 - Debug` or `Windows64 - Release`
-5. Pick the startup project `Minecraft.Client.exe` or `Minecraft.Server.exe` using the debug targets dropdown
-6. Build and run the project:
+1. Clone the repo, including submodules.
+  - If you don't, the build will fail. `git clone --recurse-submodules https://github.com/MCLCE/MinecraftConsoles.git`
+2. Open the repo folder in Visual Studio 2022+.
+3. Wait for cmake to configure the project and load all assets (this may take a few minutes on the first run).
+4. Right click a folder in the solution explorer and switch to the 'CMake Targets View'
+5. Select platform and configuration from the dropdown. EG: `Windows64 - Debug` or `Windows64 - Release`
+6. Pick the startup project `Minecraft.Client.exe` or `Minecraft.Server.exe` using the debug targets dropdown
+7. Build and run the project:
    - `Build > Build Solution` (or `Ctrl+Shift+B`)
    - Start debugging with `F5`.
 
