@@ -1066,12 +1066,21 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
 
         if (minecraft->options->renderDebug && minecraft->player != nullptr && minecraft->level != nullptr)
         {
-            lines.push_back(minecraft->fpsString);
-            lines.push_back(L"E: " + std::to_wstring(minecraft->level->getAllEntities().size()));
-            int renderDistance = app.GetGameSettings(iPad, eGameSetting_RenderDistance);
-            // Calculate the chunk sections using 16 * (2n + 1)^2
-            lines.push_back(L"C: " + std::to_wstring(16 * (2 * renderDistance + 1) * (2 * renderDistance + 1)) + L" D: " + std::to_wstring(renderDistance));
-            lines.push_back(minecraft->gatherStats4());
+
+		    glDisable(GL_DEPTH_TEST);
+		    const int debugLeft = 1;
+		    const int debugTop = 1;
+		    const float maxContentWidth = 1200.f;
+		    const float maxContentHeight = 420.f;
+
+			// Facing direction
+		    const wchar_t* cardinals[] = { L"South", L"West", L"North", L"East" };
+		    int direction = Mth::floor(minecraft->player->yRot * 4.0f / 360.0f + 0.5) & 0x3;
+		    float yRotDisplay = fmod(minecraft->player->yRot, 360.0f);
+            if (yRotDisplay >  180.0f) yRotDisplay -= 360.0f;
+            if (yRotDisplay < -180.0f) yRotDisplay += 360.0f;
+		    WCHAR angleString[16];
+            swprintf(angleString, 16, L"%.1f / %.1f", yRotDisplay, minecraft->player->xRot);
 
             // Dimension
             wstring dimension = L"unknown";
@@ -1087,9 +1096,6 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
                 dimension = L"minecraft:the_end";
                 break;
             }
-            lines.push_back(dimension);
-
-            lines.push_back(L""); // Spacer
 
             // Players block pos
             int xBlockPos = Mth::floor(minecraft->player->x);
