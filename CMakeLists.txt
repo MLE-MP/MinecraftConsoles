@@ -80,9 +80,6 @@ add_subdirectory("Minecraft.Client/${PLATFORM_NAME}/4JLibs")
 
 add_subdirectory(Minecraft.World)
 add_subdirectory(Minecraft.Client)
-if(PLATFORM_NAME STREQUAL "Windows64") # Server is only supported on Windows for now
-  add_subdirectory(Minecraft.Server)
-endif()
 
 # ---
 # Build versioning
@@ -100,9 +97,6 @@ add_custom_target(GenerateBuildVer
 
 add_dependencies(Minecraft.World GenerateBuildVer)
 add_dependencies(Minecraft.Client GenerateBuildVer)
-if(PLATFORM_NAME STREQUAL "Windows64")
-  add_dependencies(Minecraft.Server GenerateBuildVer)
-endif()
 
 # ---
 # Project organisation
