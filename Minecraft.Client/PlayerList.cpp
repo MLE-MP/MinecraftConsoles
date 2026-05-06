@@ -18,7 +18,7 @@
 #include "../Minecraft.World/ArrayWithLength.h"
 #include "../Minecraft.World/net.minecraft.network.packet.h"
 #include "../Minecraft.World/net.minecraft.network.h"
-#include "Windows64/Windows64_Xuid.h"
+#include "Windows64/Windows64_NameXuid.h"
 #ifdef _WINDOWS64
 #include "Windows64/Network/WinsockNetLayer.h"
 #endif
@@ -560,20 +560,13 @@ shared_ptr<ServerPlayer> PlayerList::getPlayerForLogin(PendingConnection *pendin
 	player->setOnlineXuid( onlineXuid ); // 4J Added
 #ifdef _WINDOWS64
 	{
-		// Use packet-supplied identity from LoginPacket.
-		// Do not recompute from name here: mixed-version clients must stay compatible.
+		PlayerUID persistentXuid = Win64NameXuid::ResolvePersistentXuidFromName(userName);
+		player->setXuid(persistentXuid);
+
 		INetworkPlayer* np = pendingConnection->connection->getSocket()->getPlayer();
-		if (np != nullptr)
+		if (np != NULL)
 		{
 			player->setOnlineXuid(np->GetUID());
-
-			// Backward compatibility: when Minecraft.Client is hosting, keep the first
-			// host player on the legacy embedded host XUID (base + 0).
-			// This preserves pre-migration host playerdata in existing worlds.
-			if (np->IsHost())
-			{
-				player->setXuid(Win64Xuid::GetLegacyEmbeddedHostXuid());
-			}
 		}
 	}
 #endif
