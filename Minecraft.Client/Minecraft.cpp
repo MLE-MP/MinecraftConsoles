@@ -54,7 +54,7 @@
 #include "../Minecraft.World/net.minecraft.world.level.dimension.h"
 #include "../Minecraft.World/net.minecraft.world.item.h"
 #include "../Minecraft.World/Minecraft.World.h"
-#include "Windows64/Windows64_Xuid.h"
+#include "Windows64/Windows64_NameXuid.h"
 #include "ClientConnection.h"
 #include "../Minecraft.World/HellRandomLevelSource.h"
 #include "../Minecraft.World/net.minecraft.world.entity.animal.h"
