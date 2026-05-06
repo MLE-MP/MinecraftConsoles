@@ -1071,7 +1071,7 @@ void Gui::render(float a, bool mouseFree, int xMouse, int yMouse)
 			lines.push_back(ClientConstants::VERSION_STRING);
             lines.push_back(minecraft->fpsString + L" (" + minecraft->chunkupdateString + L")");
             //lines.push_back(L"E: " + std::to_wstring(minecraft->level->getAllEntities().size()));
-            int renderDistance = app.GetGameSettings(iPad, eGameSetting_RenderDistance);
+            //int renderDistance = app.GetGameSettings(iPad, eGameSetting_RenderDistance);
             // Calculate the chunk sections using 16 * (2n + 1)^2
             //lines.push_back(L"C: " + std::to_wstring(16 * (2 * renderDistance + 1) * (2 * renderDistance + 1)) + L" D: " + std::to_wstring(renderDistance));
             lines.push_back(minecraft->gatherStats4());
