@@ -72,7 +72,7 @@ endforeach()
 # ---
 include("${CMAKE_SOURCE_DIR}/cmake/CopyAssets.cmake")
 set(ASSET_FOLDER_PAIRS
-  "${CMAKE_CURRENT_SOURCE_DIR}/music"                  "music"
+  "${CMAKE_CURRENT_SOURCE_DIR}/Music"                  "${PLATFORM_NAME}Media/Music"
   "${CMAKE_CURRENT_SOURCE_DIR}/Common/Media"           "Common/Media"
   "${CMAKE_CURRENT_SOURCE_DIR}/Common/res"             "Common/res"
   "${CMAKE_CURRENT_SOURCE_DIR}/${PLATFORM_NAME}Media"  "${PLATFORM_NAME}Media"

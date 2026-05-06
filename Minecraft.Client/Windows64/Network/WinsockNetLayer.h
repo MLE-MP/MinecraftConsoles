@@ -6,10 +6,20 @@
 
 #include <WinSock2.h>
 #include <WS2tcpip.h>
+#include <winhttp.h>
 #include <vector>
+#include <string>
 #include "../../Common/Network/NetworkPlayerInterface.h"
+#include "../../../Minecraft.World/DisconnectPacket.h"
 
 #pragma comment(lib, "Ws2_32.lib")
+#pragma comment(lib, "winhttp.lib")
+
+struct HttpResponse
+{
+	int status;
+	std::string body;
+};
 
 #define WIN64_NET_DEFAULT_PORT 25565
 #define WIN64_NET_MAX_CLIENTS 255
@@ -20,8 +30,6 @@
 #define WIN64_LAN_BROADCAST_MAGIC 0x4D434C4E
 
 class Socket;
-
-#include "..\..\..\Minecraft.World\DisconnectPacket.h"
 
 #pragma pack(push, 1)
 struct Win64LANBroadcast
@@ -71,6 +79,7 @@ public:
 	static bool HostGame(int port, const char* bindIp = nullptr);
 	static bool JoinGame(const char* ip, int port);
 
+	// Async join API
 	enum eJoinState
 	{
 		eJoinState_Idle,
@@ -88,6 +97,9 @@ public:
 	static DisconnectPacket::eDisconnectReason GetJoinRejectReason();
 	static bool FinalizeJoin();
 
+	// HTTP helper (auth server requests)
+	static HttpResponse DoWinHttpRequest(const std::wstring& path, const wchar_t* method, const std::string& requestData, const std::vector<std::wstring>& headers);
+
 	static bool SendToSmallId(BYTE targetSmallId, const void* data, int dataSize);
 	static bool SendOnSocket(SOCKET sock, const void* data, int dataSize);
 
@@ -97,12 +109,12 @@ public:
 	static SOCKET GetLocalSocket(BYTE senderSmallId);
 	static BYTE GetSplitScreenSmallId(int padIndex);
 
-	static bool IsHosting() { return s_isHost; }
-	static bool IsConnected() { return s_connected; }
-	static bool IsActive() { return s_active; }
+	static bool IsHosting()    { return s_isHost; }
+	static bool IsConnected()  { return s_connected; }
+	static bool IsActive()     { return s_active; }
 
 	static BYTE GetLocalSmallId() { return s_localSmallId; }
-	static BYTE GetHostSmallId() { return s_hostSmallId; }
+	static BYTE GetHostSmallId()  { return s_hostSmallId; }
 
 	static SOCKET GetSocketForSmallId(BYTE smallId);
 
@@ -124,6 +136,8 @@ public:
 
 	static int GetHostPort() { return s_hostGamePort; }
 
+	static void ClearSocketForSmallId(BYTE smallId);
+
 private:
 	static DWORD WINAPI AcceptThreadProc(LPVOID param);
 	static DWORD WINAPI RecvThreadProc(LPVOID param);
@@ -133,6 +147,7 @@ private:
 	static DWORD WINAPI DiscoveryThreadProc(LPVOID param);
 	static DWORD WINAPI JoinThreadProc(LPVOID param);
 
+	// Async join state
 	static HANDLE s_joinThread;
 	static volatile eJoinState s_joinState;
 	static volatile int s_joinAttempt;
@@ -162,6 +177,7 @@ private:
 
 	static std::vector<Win64RemoteConnection> s_connections;
 
+	// Advertise socket kept open between broadcasts (UDP in LAN mode; unused/INVALID in relay mode)
 	static SOCKET s_advertiseSock;
 	static HANDLE s_advertiseThread;
 	static volatile bool s_advertising;
@@ -180,7 +196,7 @@ private:
 
 	static CRITICAL_SECTION s_freeSmallIdLock;
 	static std::vector<BYTE> s_freeSmallIds;
-	// O(1) smallId -> socket lookup so we don't scan s_connections (which never shrinks) on every send
+	// O(1) smallId -> socket lookup so we don't scan s_connections on every send
 	static SOCKET s_smallIdToSocket[256];
 	static CRITICAL_SECTION s_smallIdToSocketLock;
 
@@ -188,9 +204,6 @@ private:
 	static SOCKET s_splitScreenSocket[XUSER_MAX_COUNT];
 	static BYTE s_splitScreenSmallId[XUSER_MAX_COUNT];
 	static HANDLE s_splitScreenRecvThread[XUSER_MAX_COUNT];
-
-public:
-	static void ClearSocketForSmallId(BYTE smallId);
 };
 
 extern bool g_Win64MultiplayerHost;
@@ -201,5 +214,10 @@ extern bool g_Win64DedicatedServer;
 extern int g_Win64DedicatedServerPort;
 extern char g_Win64DedicatedServerBindIP[256];
 extern bool g_Win64DedicatedServerLanAdvertise;
+
+extern char g_Win64RelayServerIP[256];
+extern wchar_t g_Win64RelayServerIP_Wide[256];
+extern int g_Win64RelayServerPort;
+extern wchar_t g_Win64AuthIP[256];
 
 #endif

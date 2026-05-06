@@ -1,0 +1,42 @@
+#pragma once
+
+#ifdef _WINDOWS64
+
+#include <string>
+#include <cstdio>
+#include <cstdlib>
+#include <cerrno>
+#include <cstring>
+#include <Windows.h>
+
+namespace Win64NameXuid
+{
+	inline PlayerUID ResolvePersistentXuidFromName(const std::wstring& playerName)
+	{
+		const unsigned __int64 fnvOffset = 14695981039346656037ULL;
+		const unsigned __int64 fnvPrime = 1099511628211ULL;
+		unsigned __int64 hash = fnvOffset;
+
+		for (size_t i = 0; i < playerName.length(); ++i)
+		{
+			unsigned short codeUnit = (unsigned short)playerName[i];
+			hash ^= (unsigned __int64)(codeUnit & 0xFF);
+			hash *= fnvPrime;
+			hash ^= (unsigned __int64)((codeUnit >> 8) & 0xFF);
+			hash *= fnvPrime;
+		}
+
+		// Namespace the hash away from legacy smallId-based values.
+		hash ^= 0x9E3779B97F4A7C15ULL;
+		hash |= 0x8000000000000000ULL;
+
+		if (hash == (unsigned __int64)INVALID_XUID)
+		{
+			hash ^= 0x0100000000000001ULL;
+		}
+
+		return (PlayerUID)hash;
+	}
+}
+
+#endif

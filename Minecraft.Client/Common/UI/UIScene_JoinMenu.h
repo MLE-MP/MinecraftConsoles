@@ -105,13 +105,4 @@ protected:
 	
 	static int StartGame_SignInReturned(void *pParam, bool, int);
 	static void JoinGame(UIScene_JoinMenu* pClass);
-
-#ifdef _WINDOWS64
-	void BeginEditServer();
-	void BeginDeleteServer();
-	static int EditServerKeyboardCallback(LPVOID lpParam, bool bRes);
-	static int DeleteServerDialogReturned(void *pParam, int iPad, C4JStorage::EMessageResult result);
-	void UpdateServerInFile(const wstring& newIP, const wstring& newPort, const wstring& newName);
-	void RemoveServerFromFile();
-#endif
 };

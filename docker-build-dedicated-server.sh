@@ -1,1 +1,0 @@
-docker compose -f docker-compose.dedicated-server.yml build

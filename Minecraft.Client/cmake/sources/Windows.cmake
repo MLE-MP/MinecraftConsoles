@@ -347,6 +347,7 @@ set(_MINECRAFT_CLIENT_WINDOWS_WINDOWS64
   "${BASE_DIR}/Minecraft_Macros.h"
   "${BASE_DIR}/PostProcesser.cpp"
   "${BASE_DIR}/Windows64_Minecraft.cpp"
+  "${BASE_DIR}/Windows64_Launcher.cpp"
 )
 source_group("Windows64" FILES ${_MINECRAFT_CLIENT_WINDOWS_WINDOWS64})
 
